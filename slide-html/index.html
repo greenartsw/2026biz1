@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>훈련생 성장 대시보드 HTML</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="screen-toolbar" data-ui>
+      <div>
+        <strong>훈련생 성장 대시보드 HTML</strong>
+        <span>Google Sheets live data · 1600 x 900px</span>
+      </div>
+      <div class="toolbar-actions">
+        <label>테마 <select id="themeSelect">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="aqua">Aqua Pop</option>
+          <option value="pulse">Metric Pulse</option>
+          <option value="task">Task Flow</option>
+        </select></label>
+        <label>슬라이드 <select id="slideSelect"></select></label>
+        <button id="reloadData" type="button">데이터 새로고침</button>
+        <button id="showAll" type="button">전체 보기</button>
+        <button id="cleanView" type="button">캡처 모드</button>
+      </div>
+    </div>
+    <main id="deck" class="deck" aria-live="polite"></main>
+    <script src="./data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
