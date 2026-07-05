@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-07-05 디버깅 작업 일지</title>
+  <style>
+    :root {
+      --ink: #10213f;
+      --muted: #5e6f8a;
+      --blue: #1450ba;
+      --teal: #159a8f;
+      --line: #d9e4f1;
+      --soft: #f3f7fc;
+      --paper: #ffffff;
+      --code: #eef4fb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(20,80,186,0.08), rgba(20,80,186,0) 320px),
+        #eaf1f8;
+      color: var(--ink);
+      font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+      line-height: 1.65;
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 38px 0 56px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 28px;
+      align-items: end;
+      padding: 34px 38px;
+      border: 1px solid rgba(20,80,186,0.18);
+      background: var(--paper);
+      box-shadow: 0 22px 60px rgba(17, 32, 65, 0.12);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      margin: 0;
+      color: #072760;
+      font-size: clamp(32px, 5vw, 54px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 740px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+      font-weight: 750;
+    }
+
+    .stamp {
+      min-width: 164px;
+      padding: 16px 18px;
+      border-left: 7px solid var(--teal);
+      background: var(--soft);
+      text-align: right;
+    }
+
+    .stamp strong {
+      display: block;
+      color: #072760;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .stamp span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 22px;
+      margin-top: 22px;
+    }
+
+    .toc,
+    .content {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      box-shadow: 0 14px 36px rgba(17, 32, 65, 0.08);
+    }
+
+    .toc {
+      position: sticky;
+      top: 18px;
+      align-self: start;
+      padding: 18px;
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+    }
+
+    .toc h2 {
+      margin: 0 0 12px;
+      color: #072760;
+      font-size: 17px;
+      line-height: 1.2;
+    }
+
+    .toc a {
+      display: block;
+      padding: 8px 0;
+      border-top: 1px solid var(--soft);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+      line-height: 1.35;
+      text-decoration: none;
+    }
+
+    .toc a:hover { color: var(--blue); }
+
+    .content {
+      padding: 34px 42px 46px;
+    }
+
+    .content h1 { display: none; }
+
+    .content h2 {
+      margin: 34px 0 14px;
+      padding-top: 22px;
+      border-top: 1px solid var(--line);
+      color: #072760;
+      font-size: 26px;
+      line-height: 1.22;
+      letter-spacing: 0;
+    }
+
+    .content h2:first-child,
+    .content h1 + h2 {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .content h3 {
+      margin: 22px 0 8px;
+      color: var(--blue);
+      font-size: 18px;
+      line-height: 1.3;
+    }
+
+    .content p {
+      margin: 8px 0;
+      color: #243754;
+      font-size: 15.5px;
+      font-weight: 650;
+    }
+
+    .content ul {
+      display: grid;
+      gap: 6px;
+      margin: 10px 0 16px;
+      padding: 12px 16px 12px 31px;
+      border-left: 5px solid rgba(20,80,186,0.22);
+      background: var(--soft);
+    }
+
+    .content li {
+      color: #20344f;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .content code {
+      padding: 2px 6px;
+      border: 1px solid #d5e3f4;
+      background: var(--code);
+      color: #0a3d8f;
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.92em;
+      white-space: break-spaces;
+    }
+
+    .content blockquote {
+      margin: 18px 0;
+      padding: 13px 16px;
+      border-left: 6px solid var(--teal);
+      background: #eefaf8;
+      color: #173b47;
+      font-weight: 800;
+    }
+
+    .loading,
+    .error {
+      padding: 32px;
+      color: var(--muted);
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .actions a {
+      display: inline-grid;
+      place-items: center;
+      min-height: 36px;
+      padding: 0 13px;
+      border: 1px solid rgba(20,80,186,0.32);
+      background: #f7fbff;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    @media (max-width: 880px) {
+      .hero { grid-template-columns: 1fr; padding: 28px 24px; }
+      .stamp { text-align: left; }
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; max-height: none; }
+      .content { padding: 28px 24px 36px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">GREEN COMPUTER ACADEMY SUWON</p>
+        <h1>디버깅 작업 일지</h1>
+        <p class="lead">기업 맞춤형 훈련생 리포트의 저장, 배포, UI, 데이터 해석 이슈를 정리한 작업 기록입니다.</p>
+        <div class="actions">
+          <a href="./debug-log_20260705.md">원문 MD</a>
+          <a href="./student-report-html/index.html?view=summary&theme=white">리포트 보기</a>
+        </div>
+      </div>
+      <aside class="stamp" aria-label="문서 정보">
+        <strong>2026.07.05</strong>
+        <span>debug log</span>
+      </aside>
+    </header>
+
+    <div class="layout">
+      <nav class="toc" aria-label="목차">
+        <h2>목차</h2>
+        <div id="tocList"><div class="loading">불러오는 중</div></div>
+      </nav>
+      <article class="content" id="content">
+        <div class="loading">일지를 불러오는 중입니다.</div>
+      </article>
+    </div>
+  </main>
+
+  <script>
+    const sourcePath = "./debug-log_20260705.md";
+    const content = document.getElementById("content");
+    const tocList = document.getElementById("tocList");
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function inline(value) {
+      return escapeHtml(value).replace(/`([^`]+)`/g, "<code>$1</code>");
+    }
+
+    function slug(value, used) {
+      const base = String(value)
+        .trim()
+        .toLowerCase()
+        .replace(/[^\w가-힣]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "section";
+      const count = used.get(base) || 0;
+      used.set(base, count + 1);
+      return count ? `${base}-${count + 1}` : base;
+    }
+
+    function renderMarkdown(markdown) {
+      const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+      const used = new Map();
+      const headings = [];
+      const html = [];
+      let list = [];
+
+      function flushList() {
+        if (!list.length) return;
+        html.push("<ul>" + list.map((item) => `<li>${inline(item)}</li>`).join("") + "</ul>");
+        list = [];
+      }
+
+      lines.forEach((line) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          flushList();
+          return;
+        }
+
+        const heading = /^(#{1,3})\s+(.+)$/.exec(trimmed);
+        if (heading) {
+          flushList();
+          const level = heading[1].length;
+          const text = heading[2].trim();
+          const id = slug(text, used);
+          if (level === 2) headings.push({ id, text });
+          html.push(`<h${level} id="${id}">${inline(text)}</h${level}>`);
+          return;
+        }
+
+        const bullet = /^-\s+(.+)$/.exec(trimmed);
+        if (bullet) {
+          list.push(bullet[1]);
+          return;
+        }
+
+        flushList();
+        html.push(`<p>${inline(trimmed)}</p>`);
+      });
+
+      flushList();
+      return { html: html.join("\n"), headings };
+    }
+
+    function renderToc(headings) {
+      if (!headings.length) {
+        tocList.innerHTML = '<div class="loading">목차 없음</div>';
+        return;
+      }
+      tocList.innerHTML = headings
+        .map((heading) => `<a href="#${heading.id}">${inline(heading.text)}</a>`)
+        .join("");
+    }
+
+    fetch(sourcePath, { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("문서를 불러오지 못했습니다.");
+        return response.text();
+      })
+      .then((markdown) => {
+        const rendered = renderMarkdown(markdown);
+        content.innerHTML = rendered.html;
+        renderToc(rendered.headings);
+      })
+      .catch((error) => {
+        content.innerHTML = `<div class="error">${escapeHtml(error.message)} <a href="${sourcePath}">원문 열기</a></div>`;
+        tocList.innerHTML = '<div class="loading">목차 없음</div>';
+      });
+  </script>
+</body>
+</html>
