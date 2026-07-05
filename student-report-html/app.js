@@ -15,6 +15,9 @@ const studentSelect = document.getElementById("studentSelect") || controlFallbac
 const themeSelect = document.getElementById("themeSelect") || controlFallback("white");
 const viewSelect = document.getElementById("viewSelect") || controlFallback("all");
 const captureMode = document.getElementById("captureMode") || controlFallback("캡처 모드");
+const completedFeedbackStudents = new Set();
+let completedFeedbackLoading = null;
+let completedFeedbackLoaded = false;
 
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -535,17 +538,123 @@ function feedbackFormStudent(form) {
 }
 
 function selectedRatingValue(form, student, index) {
-  const name = displayName(student.name) + "_" + index;
-  const checked = [...form.querySelectorAll(".rating-options input[type='checkbox']")].find((input) => input.name === name && input.checked);
+  const names = new Set([
+    student.name,
+    student.maskedName,
+    displayName(student.name)
+  ].filter(Boolean).map((name) => name + "_" + index));
+  const checked = [...form.querySelectorAll(".rating-options input[type='checkbox']")].find((input) => names.has(input.name) && input.checked);
   return checked ? checked.value : "";
+}
+
+function normalizeFeedbackKey(value) {
+  return slug(String(value || "").replace(/[○]/g, "O"));
+}
+
+function feedbackStudentKeys(student) {
+  return [
+    student.name,
+    student.maskedName,
+    displayName(student.name)
+  ].filter(Boolean).map(normalizeFeedbackKey);
+}
+
+function isFeedbackCompleted(student) {
+  return feedbackStudentKeys(student).some((key) => completedFeedbackStudents.has(key));
+}
+
+function addCompletedFeedbackStudent(value) {
+  const key = normalizeFeedbackKey(value);
+  if (key) completedFeedbackStudents.add(key);
+}
+
+function applyCompletedButtonState(form, student) {
+  const button = form.querySelector(".feedback-submit");
+  if (!button) return;
+  const completed = isFeedbackCompleted(student);
+  form.classList.toggle("is-mentoring-complete", completed);
+  button.disabled = completed;
+  button.textContent = completed ? "멘토링 완료" : "훈련생 피드백 저장";
+}
+
+function applyCompletedButtonStates() {
+  deck.querySelectorAll(".enterprise-form").forEach((form) => {
+    applyCompletedButtonState(form, feedbackFormStudent(form));
+  });
+}
+
+function completedFeedbackUrl(callbackName) {
+  const endpoint = feedbackEndpoint();
+  if (!endpoint) return "";
+  const url = new URL(endpoint, location.href);
+  url.searchParams.set("action", "completed");
+  url.searchParams.set("callback", callbackName);
+  return url.toString();
+}
+
+function loadCompletedFeedback(force = false) {
+  if (completedFeedbackLoading && !force) return completedFeedbackLoading;
+  const callbackName = "__studentReportCompleted_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+  const url = completedFeedbackUrl(callbackName);
+  if (!url) return Promise.resolve(false);
+
+  completedFeedbackLoading = new Promise((resolve) => {
+    const script = document.createElement("script");
+    const cleanup = () => {
+      delete window[callbackName];
+      script.remove();
+      completedFeedbackLoading = null;
+    };
+    const timer = window.setTimeout(() => {
+      cleanup();
+      resolve(false);
+    }, 8000);
+
+    window[callbackName] = (data) => {
+      window.clearTimeout(timer);
+      completedFeedbackStudents.clear();
+      ((data && data.completedStudents) || []).forEach(addCompletedFeedbackStudent);
+      ((data && data.completedMaskedNames) || []).forEach(addCompletedFeedbackStudent);
+      ((data && data.records) || []).forEach((record) => {
+        addCompletedFeedbackStudent(record.student);
+        addCompletedFeedbackStudent(record.maskedName);
+      });
+      completedFeedbackLoaded = true;
+      applyCompletedButtonStates();
+      cleanup();
+      resolve(true);
+    };
+
+    script.onerror = () => {
+      window.clearTimeout(timer);
+      cleanup();
+      resolve(false);
+    };
+    script.src = url;
+    document.head.appendChild(script);
+  });
+  return completedFeedbackLoading;
+}
+
+async function waitForFeedbackCompletion(student, attempts = 8, delay = 1000) {
+  for (let index = 0; index < attempts; index += 1) {
+    await loadCompletedFeedback(true);
+    if (isFeedbackCompleted(student)) return true;
+    await new Promise((resolve) => window.setTimeout(resolve, delay));
+  }
+  return false;
 }
 
 function validateFeedbackForm(form) {
   const student = feedbackFormStudent(form);
   const missingItems = cfg.feedbackItems.filter((item, index) => !selectedRatingValue(form, student, index));
-  if (!missingItems.length) return true;
-  const message = displayName(student.name) + " 훈련생 피드백 평가항목 5개를 모두 체크해주세요.";
-  setFeedbackStatus(form, message + " 미체크: " + missingItems.join(", "), "error");
+  const feedback = ((form.closest(".report-page") || form).querySelector(".feedback-lines textarea") || {}).value || "";
+  const missingFeedback = !feedback.trim();
+  if (!missingItems.length && !missingFeedback) return true;
+  const message = displayName(student.name) + " 훈련생 피드백 평가항목 5개와 기업담당자 의견을 모두 입력해주세요.";
+  const missing = [...missingItems];
+  if (missingFeedback) missing.push("기업담당자 의견");
+  setFeedbackStatus(form, message + " 미입력: " + missing.join(", "), "error");
   if (typeof window.alert === "function") window.alert(message);
   return false;
 }
@@ -553,12 +662,14 @@ function validateFeedbackForm(form) {
 function collectFeedbackPayload(form) {
   const page = form.closest(".report-page");
   const student = feedbackFormStudent(form);
+  const submittedAt = new Date().toISOString();
+  const feedback = ((page || form).querySelector(".feedback-lines textarea") || {}).value || "";
   const ratings = {};
   cfg.feedbackItems.forEach((item, index) => {
     ratings[item] = selectedRatingValue(form, student, index);
   });
   return {
-    submittedAt: new Date().toISOString(),
+    submittedAt,
     student: student.name,
     maskedName: student.maskedName,
     team: student.team.id,
@@ -567,16 +678,34 @@ function collectFeedbackPayload(form) {
     project1Score: isMissing(summaryProject1Score(student)) ? "" : one(summaryProject1Score(student)),
     fit: isMissing(student.fit) ? "" : student.fit,
     ratings,
-    feedback: ((page || form).querySelector(".feedback-lines textarea") || {}).value || "",
+    feedback,
     memo: "",
     targetChecked: true,
     theme: document.body.dataset.theme || "white",
     pageUrl: location.href,
-    sheetUrl: cfg.feedbackSheetUrl || ""
+    sheetUrl: cfg.feedbackSheetUrl || "",
+    "제출시각": submittedAt,
+    "훈련생": student.name,
+    "마스킹명": student.maskedName,
+    "팀": student.team.id,
+    "기업": student.team.company || cfg.companyName,
+    "본(재)평가": isMissing(student.final) ? "" : one(student.final),
+    "프로젝트1": isMissing(summaryProject1Score(student)) ? "" : one(summaryProject1Score(student)),
+    "채용적합도": isMissing(student.fit) ? "" : student.fit,
+    "종합 피드백": feedback,
+    "기업 메모": "",
+    "회신대상체크": true,
+    "테마": document.body.dataset.theme || "white",
+    "페이지URL": location.href
   };
 }
 
 async function submitFeedback(form) {
+  const student = feedbackFormStudent(form);
+  if (isFeedbackCompleted(student)) {
+    applyCompletedButtonState(form, student);
+    return;
+  }
   if (!validateFeedbackForm(form)) return;
   const endpoint = feedbackEndpoint();
   if (!endpoint) {
@@ -593,10 +722,17 @@ async function submitFeedback(form) {
       mode: "no-cors",
       body: JSON.stringify(payload)
     });
-    setFeedbackStatus(form, "시트 저장 요청을 보냈습니다.", "success");
+    setFeedbackStatus(form, "저장 요청을 보냈습니다. 시트 입력 여부를 확인 중입니다...", "pending");
+    const saved = await waitForFeedbackCompletion(student);
+    if (saved) {
+      setFeedbackStatus(form, "입력되었습니다. 화면을 새로고침합니다...", "success");
+      window.setTimeout(() => location.reload(), 900);
+    } else {
+      setFeedbackStatus(form, "저장 요청은 보냈지만 시트 입력이 확인되지 않았습니다. Apps Script 배포 상태를 확인해주세요.", "error");
+      if (button) button.disabled = false;
+    }
   } catch (error) {
     setFeedbackStatus(form, "전송 실패: " + error.message, "error");
-  } finally {
     if (button) button.disabled = false;
   }
 }
@@ -827,7 +963,7 @@ function renderPageTwo(student) {
               <h2>${esc(student.name)} 훈련생 피드백</h2>
             </div>
             <div class="form-actions">
-              <button class="feedback-submit" type="submit">훈련생 피드백 저장</button>
+              <button class="feedback-submit" type="submit"${isFeedbackCompleted(student) ? " disabled" : ""}>${isFeedbackCompleted(student) ? "멘토링 완료" : "훈련생 피드백 저장"}</button>
             </div>
           </div>
           <div class="rating-table">
@@ -889,6 +1025,7 @@ function render() {
   } else {
     deck.innerHTML = renderStudent(selectedStudent());
   }
+  applyCompletedButtonStates();
   updateUrl();
 }
 
@@ -948,3 +1085,4 @@ function initControls() {
 
 initControls();
 render();
+loadCompletedFeedback();
