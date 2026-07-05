@@ -329,7 +329,7 @@ function metric(label, value, meta, tone = "blue") {
 function collaborationBreakdown(student) {
   return [student.peer, student.selfEval, student.instructorEval]
     .map((value) => isMissing(value) ? "-" : String(Math.round(Number(value))))
-    .join(" / ");
+    .join("/");
 }
 
 function bar(label, value, max = 100) {
@@ -466,7 +466,6 @@ function renderPageOne(student) {
           <div>
             <div class="identity-title">
               <h2>${esc(student.name)}</h2>
-              ${chip(student.maskedName)}
               ${chip(student.group, student.group === "중탈" || student.group === "성장관리" || student.group === "참여안정" ? "coral" : student.group === "최우수" ? "teal" : "blue")}
             </div>
             <p>${esc(cfg.sourceNote)}</p>
