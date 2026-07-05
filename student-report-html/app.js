@@ -17,6 +17,7 @@ const viewSelect = document.getElementById("viewSelect") || controlFallback("all
 const captureMode = document.getElementById("captureMode") || controlFallback("캡처 모드");
 const completedFeedbackStudents = new Set();
 const completedFeedbackRecords = new Map();
+let completedCoverSelection = { completed: false, teams: [], records: [] };
 let completedFeedbackLoading = null;
 let completedFeedbackLoaded = false;
 
@@ -705,8 +706,10 @@ function loadCompletedFeedback(force = false) {
       ((data && data.completedStudents) || []).forEach(addCompletedFeedbackStudent);
       ((data && data.completedMaskedNames) || []).forEach(addCompletedFeedbackStudent);
       ((data && data.records) || []).forEach(addCompletedFeedbackRecord);
+      completedCoverSelection = (data && data.coverSelection) || { completed: Boolean(data && data.coverSelectionCompleted), teams: [], records: [] };
       completedFeedbackLoaded = true;
       applyCompletedButtonStates();
+      applyCompletedCoverSelectionState();
       cleanup();
       resolve(true);
     };
@@ -905,6 +908,62 @@ function collectCoverSelectionPayload(form) {
   };
 }
 
+function coverSelectionRecordForTeam(team) {
+  const records = (completedCoverSelection && completedCoverSelection.records) || [];
+  return records.find((record) => String(record.team || "") === String(team.id || team)) || null;
+}
+
+function isCoverSelectionCompleted() {
+  return Boolean(completedCoverSelection && completedCoverSelection.completed);
+}
+
+function applyCompletedCoverSelectionValues(form) {
+  (cfg.teams || []).forEach((team) => {
+    const record = coverSelectionRecordForTeam(team);
+    if (!record) return;
+    const radio = record.selectedId ? form.querySelector(`input[name="${coverFieldName(team)}"][value="${attr(record.selectedId)}"]`) : null;
+    if (radio) radio.checked = true;
+    const reason = form.querySelector(`textarea[name="${coverFieldName(team, "reason")}"]`);
+    if (reason && record.reason !== undefined && record.reason !== null) reason.value = record.reason;
+  });
+}
+
+function setCoverSelectionControls(form, completed) {
+  if (!form) return;
+  if (completed) applyCompletedCoverSelectionValues(form);
+  form.classList.toggle("is-cover-complete", completed);
+  form.querySelectorAll("input, textarea").forEach((input) => {
+    input.disabled = completed;
+  });
+  const button = form.querySelector(".feedback-submit");
+  if (button) {
+    button.disabled = completed;
+    button.textContent = completed ? "표지 선정 완료" : "저장";
+  }
+  if (completed) setFeedbackStatus(form, "시트에 저장된 표지 선정 결과가 반영되었습니다.", "success");
+}
+
+function applyCompletedCoverSelectionState() {
+  const form = deck.querySelector(".cover-selection-form");
+  if (!form) return;
+  setCoverSelectionControls(form, isCoverSelectionCompleted());
+}
+
+function coverSelectionFromPayload(payload) {
+  const selections = payload.selections || {};
+  return {
+    completed: true,
+    teams: Object.keys(selections),
+    records: Object.entries(selections).map(([team, selection]) => ({
+      submittedAt: payload.submittedAt || "",
+      team,
+      selectedLabel: selection.selectedLabel || "",
+      selectedId: selection.selectedId || "",
+      reason: selection.reason || "",
+      pageUrl: payload.pageUrl || ""
+    }))
+  };
+}
 async function submitCoverSelection(form) {
   if (!validateCoverSelectionForm(form)) return;
   const endpoint = feedbackEndpoint();
@@ -922,11 +981,13 @@ async function submitCoverSelection(form) {
       mode: "no-cors",
       body: JSON.stringify(payload)
     });
+    completedCoverSelection = coverSelectionFromPayload(payload);
+    setCoverSelectionControls(form, true);
     setFeedbackStatus(form, "표지 선정 저장 요청을 보냈습니다.", "success");
   } catch (error) {
     setFeedbackStatus(form, "전송 실패: " + error.message, "error");
   } finally {
-    if (button) button.disabled = false;
+    if (button && !isCoverSelectionCompleted()) button.disabled = false;
   }
 }
 
@@ -1128,6 +1189,7 @@ function render() {
     deck.innerHTML = renderStudent(selectedStudent());
   }
   applyCompletedButtonStates();
+  applyCompletedCoverSelectionState();
   updateUrl();
 }
 

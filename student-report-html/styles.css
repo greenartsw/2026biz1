@@ -948,3 +948,21 @@ body.capture .report-page { width: 100vw; border-radius: 0; box-shadow: none; }
   resize: none;
   background: var(--panel-soft);
 }
+.cover-selection-form.is-cover-complete .cover-option {
+  cursor: default;
+  opacity: 0.58;
+}
+.cover-selection-form.is-cover-complete .cover-option:has(input:checked) {
+  opacity: 1;
+}
+.cover-selection-form.is-cover-complete .cover-thumb {
+  filter: grayscale(0.25);
+}
+.cover-selection-form.is-cover-complete .cover-option input:checked ~ .cover-thumb {
+  filter: none;
+}
+.cover-selection-form.is-cover-complete .cover-reason textarea:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #d1d5db;
+}

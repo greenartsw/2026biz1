@@ -1,5 +1,6 @@
 const SPREADSHEET_ID = "1isyMSHjnhS4FmSujLdteEHxoFq3oM1yy44rPNIXZSRI";
 const SHEET_NAME = "훈련생 피드백";
+const COVER_SHEET_NAME = "표지 선정";
 const FEEDBACK_ITEMS = [
   "콘텐츠 기획 및 구성의 적절성",
   "디자인 및 편집 완성도",
@@ -25,6 +26,22 @@ const HEADERS = [
   "페이지URL"
 ];
 
+const COVER_HEADERS = [
+  "제출시각",
+  "응답유형",
+  "기업",
+  "팀",
+  "선택표지",
+  "선택ID",
+  "선정이유",
+  "표지URL",
+  "이미지URL",
+  "테마",
+  "페이지URL",
+  "선정요약",
+  "원본JSON"
+];
+
 function doGet(e) {
   const params = (e && e.parameter) || {};
   const action = String(params.action || "");
@@ -46,6 +63,17 @@ function doGet(e) {
 
 function doPost(e) {
   const payload = parsePayload_(e);
+
+  if (payload.responseType === "팀표지선정") {
+    const coverSheet = getCoverSelectionSheet_();
+    ensureHeaders_(coverSheet, COVER_HEADERS);
+    const result = appendCoverSelection_(coverSheet, payload);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: true, saved: true, type: "coverSelection", rowNumber: result.rowNumber, rowsSaved: result.rowsSaved }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   const sheet = getFeedbackSheet_();
   ensureHeaders_(sheet);
   const rowNumber = appendFeedback_(sheet, payload);
@@ -69,15 +97,21 @@ function getFeedbackSheet_() {
   return spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
 }
 
-function ensureHeaders_(sheet) {
+function getCoverSelectionSheet_() {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  return spreadsheet.getSheetByName(COVER_SHEET_NAME) || spreadsheet.insertSheet(COVER_SHEET_NAME);
+}
+
+function ensureHeaders_(sheet, expectedHeaders) {
+  const headers = expectedHeaders || HEADERS;
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(HEADERS);
+    sheet.appendRow(headers);
     return;
   }
 
   const current = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
   const next = current.slice();
-  HEADERS.forEach((header) => {
+  headers.forEach((header) => {
     if (!next.includes(header)) next.push(header);
   });
 
@@ -95,6 +129,28 @@ function appendFeedback_(sheet, payload) {
   });
   sheet.appendRow(row);
   return sheet.getLastRow();
+}
+
+function appendCoverSelection_(sheet, payload) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const selections = payload.selections || {};
+  const teams = Object.keys(selections);
+
+  if (!teams.length) {
+    const row = headers.map((header) => valueForCoverHeader_(payload, "", {}, header));
+    sheet.appendRow(row);
+    return { rowNumber: sheet.getLastRow(), rowsSaved: 1 };
+  }
+
+  let firstRowNumber = 0;
+  teams.forEach((team) => {
+    const selection = selections[team] || {};
+    const row = headers.map((header) => valueForCoverHeader_(payload, team, selection, header));
+    sheet.appendRow(row);
+    if (!firstRowNumber) firstRowNumber = sheet.getLastRow();
+  });
+
+  return { rowNumber: firstRowNumber, rowsSaved: teams.length };
 }
 
 function valueForHeader_(payload, header) {
@@ -123,13 +179,33 @@ function valueForHeader_(payload, header) {
   return "";
 }
 
+function valueForCoverHeader_(payload, team, selection, header) {
+  const values = {
+    "제출시각": payload.submittedAt || "",
+    "응답유형": payload.responseType || "팀표지선정",
+    "기업": payload.company || "",
+    "팀": team || "",
+    "선택표지": selection.selectedLabel || "",
+    "선택ID": selection.selectedId || "",
+    "선정이유": selection.reason || "",
+    "표지URL": selection.coverOutputUrl || "",
+    "이미지URL": selection.imageUrl || "",
+    "테마": payload.theme || "",
+    "페이지URL": payload.pageUrl || "",
+    "선정요약": payload.feedback || "",
+    "원본JSON": JSON.stringify(payload)
+  };
+  return values[header] !== undefined ? values[header] : "";
+}
+
 function getCompletedFeedbackPayload_() {
+  const coverSelection = getCoverSelectionStatus_();
   const sheet = getFeedbackSheet_();
   ensureHeaders_(sheet);
 
   const values = sheet.getDataRange().getValues();
   if (values.length < 2) {
-    return { ok: true, completedStudents: [], completedMaskedNames: [], records: [] };
+    return { ok: true, completedStudents: [], completedMaskedNames: [], records: [], coverSelection, coverSelectionCompleted: coverSelection.completed };
   }
 
   const headers = values[0].map((header) => String(header || "").trim());
@@ -154,8 +230,36 @@ function getCompletedFeedbackPayload_() {
     ok: true,
     completedStudents: records.map((record) => record.student).filter(Boolean),
     completedMaskedNames: records.map((record) => record.maskedName).filter(Boolean),
-    records
+    records,
+    coverSelection,
+    coverSelectionCompleted: coverSelection.completed
   };
+}
+
+function getCoverSelectionStatus_() {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = spreadsheet.getSheetByName(COVER_SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return { completed: false, teams: [], records: [] };
+
+  ensureHeaders_(sheet, COVER_HEADERS);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0].map((header) => String(header || "").trim());
+  const records = values.slice(1).map((row) => {
+    const record = {};
+    headers.forEach((header, index) => {
+      record[header] = row[index];
+    });
+    return {
+      submittedAt: record["제출시각"] || "",
+      team: record["팀"] || "",
+      selectedLabel: record["선택표지"] || "",
+      selectedId: record["선택ID"] || "",
+      reason: record["선정이유"] || "",
+      pageUrl: record["페이지URL"] || ""
+    };
+  }).filter((record) => String(record.team || "").trim());
+  const teams = Array.from(new Set(records.map((record) => String(record.team || "").trim()).filter(Boolean)));
+  return { completed: teams.length > 0, teams, records };
 }
 
 function rowToRecord_(headers, row) {
@@ -165,7 +269,7 @@ function rowToRecord_(headers, row) {
   });
   record.student = firstValue_(record, ["student", "훈련생", "훈련생명", "성명", "name"]);
   record.maskedName = firstValue_(record, ["maskedName", "마스킹명", "표시명"]);
-  record.submittedAt = firstValue_(record, ["submittedAt", "저장일시", "타임스탬프", "Timestamp"]);
+  record.submittedAt = firstValue_(record, ["submittedAt", "제출시각", "저장일시", "타임스탬프", "Timestamp"]);
   record.feedback = firstValue_(record, ["feedback", "기업담당자의견", "기업 담당자 의견", "종합 피드백", "멘토링"]);
   return record;
 }
@@ -223,5 +327,24 @@ function normalizeKey_(value) {
 
 function testDoGetCompleted() {
   const output = doGet({ parameter: { action: "completed" } });
+  Logger.log(output.getContent());
+}
+
+function testDoPostCoverSelection() {
+  const output = doPost({
+    postData: {
+      contents: JSON.stringify({
+        responseType: "팀표지선정",
+        submittedAt: new Date().toISOString(),
+        company: "테스트 기업",
+        selections: {
+          "팀1": { selectedLabel: "표지안 1", selectedId: "team1-cover-1", reason: "테스트", coverOutputUrl: "", imageUrl: "" }
+        },
+        feedback: "팀1: 표지안 1 / 테스트",
+        theme: "white",
+        pageUrl: "test"
+      })
+    }
+  });
   Logger.log(output.getContent());
 }
