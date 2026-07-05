@@ -686,6 +686,7 @@ function collectFeedbackPayload(form) {
   const student = feedbackFormStudent(form);
   const submittedAt = new Date().toISOString();
   const feedback = ((page || form).querySelector(".feedback-lines textarea") || {}).value || "";
+  const studentUrl = studentPageUrl(student);
   const ratings = {};
   cfg.feedbackItems.forEach((item, index) => {
     ratings[item] = selectedRatingValue(form, student, index);
@@ -704,7 +705,7 @@ function collectFeedbackPayload(form) {
     memo: "",
     targetChecked: true,
     theme: document.body.dataset.theme || "white",
-    pageUrl: location.href,
+    pageUrl: studentUrl,
     sheetUrl: cfg.feedbackSheetUrl || "",
     "제출시각": submittedAt,
     "훈련생": student.name,
@@ -718,7 +719,7 @@ function collectFeedbackPayload(form) {
     "기업 메모": "",
     "회신대상체크": true,
     "테마": document.body.dataset.theme || "white",
-    "페이지URL": location.href
+    "페이지URL": studentUrl
   };
 }
 
@@ -1070,6 +1071,14 @@ function studentOptionValue(student) {
 
 function studentRouteName(student) {
   return student.maskedName || maskName(student.name);
+}
+
+function studentPageUrl(student) {
+  const url = new URL(location.href);
+  url.searchParams.set("student", studentRouteName(student));
+  url.searchParams.set("view", "both");
+  url.searchParams.set("theme", document.body.dataset.theme || "white");
+  return url.toString();
 }
 
 function formStudentKey(student) {
