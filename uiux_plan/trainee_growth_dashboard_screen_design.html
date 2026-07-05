@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>훈련생 성장 대시보드 / 성적 결과서 화면설계서</title>
+  <style>
+    :root{
+      --ink:#111827;
+      --muted:#5b6472;
+      --line:#9aa7b8;
+      --soft:#f4f7fb;
+      --panel:#ffffff;
+      --blue:#1f5fd0;
+      --blue2:#0b3f9b;
+      --red:#ff3448;
+      --green:#22c55e;
+      --a4w:1120px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      color:var(--ink);
+      background:#e9eef6;
+      font-family: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
+      line-height:1.45;
+      word-break:keep-all;
+    }
+    .toolbar{
+      position:sticky;top:0;z-index:100;
+      display:flex;align-items:center;gap:10px;
+      padding:10px 18px;
+      background:#0f172a;color:white;
+      box-shadow:0 6px 18px rgba(15,23,42,.18);
+    }
+    .toolbar strong{font-size:14px;letter-spacing:-.01em}
+    .toolbar button{
+      margin-left:auto;border:0;border-radius:8px;padding:8px 12px;
+      background:#fff;color:#0f172a;font-weight:700;cursor:pointer;
+    }
+    .doc{max-width:calc(var(--a4w) + 40px);margin:22px auto 56px;padding:0 20px}
+    .page{
+      width:var(--a4w);min-height:760px;margin:0 auto 24px;
+      background:white;border:1px solid #c8d0dc;
+      box-shadow:0 10px 24px rgba(20,32,55,.12);
+      padding:28px 32px;
+      position:relative;
+    }
+    .cover{
+      display:grid;grid-template-columns: 1fr 320px;gap:28px;align-content:center;
+      min-height:760px;
+      background:linear-gradient(135deg,#ffffff 0%,#f8fbff 55%,#edf4ff 100%);
+    }
+    .cover .kicker{color:var(--blue);font-weight:800;font-size:15px;margin-bottom:18px}
+    h1{font-size:42px;line-height:1.15;margin:0 0 18px;letter-spacing:-.04em}
+    h2{font-size:24px;margin:0 0 14px;letter-spacing:-.03em}
+    h3{font-size:16px;margin:0 0 8px;letter-spacing:-.02em}
+    p{margin:0 0 8px}.sub{font-size:17px;color:var(--muted)}
+    .meta-card{border:1px solid #cbd5e1;background:white;border-radius:16px;padding:18px}
+    .meta-card dl{display:grid;grid-template-columns:88px 1fr;gap:9px 10px;margin:0;font-size:13px}
+    dt{font-weight:800;color:#334155} dd{margin:0;color:#1f2937}
+    .badge{display:inline-flex;align-items:center;border:1px solid #cfe0ff;border-radius:999px;background:#eff6ff;color:#174ea6;padding:6px 10px;font-weight:800;font-size:12px}
+    .section-title{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;border-bottom:2px solid #172554;padding-bottom:8px}
+    .section-title small{color:#64748b;font-weight:700}
+    table{border-collapse:collapse;width:100%;font-size:12px;background:white}
+    th,td{border:1px solid var(--line);padding:8px 9px;vertical-align:top}
+    th{background:#f1f5f9;font-weight:800;text-align:center}
+    .history th:nth-child(1){width:48px}.history th:nth-child(2){width:100px}.history th:nth-child(3){width:85px}.history th:nth-child(4){width:80px}.history th:nth-child(6){width:130px}
+    .info-table th{width:105px}.info-table td{font-weight:600}.info-table td:nth-child(2n){font-weight:700;color:#1f2937}
+    .flow{
+      display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:20px 0 18px;
+    }
+    .flow .step{
+      min-height:96px;border:1px solid #b8c4d6;background:#f8fafc;border-radius:14px;padding:14px;text-align:center;position:relative;
+    }
+    .flow .step:not(:last-child)::after{content:"→";position:absolute;right:-16px;top:36px;color:#1d4ed8;font-size:22px;font-weight:900}
+    .step b{display:block;color:var(--blue);font-size:13px;margin-bottom:8px}.step span{font-size:12px;color:#344054}
+    .layout{display:grid;grid-template-columns:760px 1fr;gap:14px;align-items:start}
+    .screen-box{border:2px solid #1f2937;background:#fff;padding:12px;position:relative;min-height:612px}
+    .screen-head{display:grid;grid-template-columns:1fr 110px 82px;border:1px solid #9aa7b8;background:#f8fafc;margin-bottom:10px;font-size:12px;font-weight:800}
+    .screen-head div{border-right:1px solid #9aa7b8;padding:7px 8px}.screen-head div:last-child{border-right:0;text-align:center;color:#1d4ed8}
+    .wire-dashboard{display:grid;grid-template-columns:82px 1fr 176px;gap:8px;min-height:548px}
+    .vertical-band{background:#2346a0;color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;font-weight:900;letter-spacing:.02em;padding:12px;font-size:16px;position:relative}
+    .vertical-band .mini{font-size:10px;font-weight:600;opacity:.9;margin-top:10px}
+    .dash-main{border:1px solid #d5dce8;border-radius:8px;background:#f8fafc;padding:9px;position:relative}
+    .product-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #cbd5e1;padding-bottom:7px;margin-bottom:8px}
+    .logo{font-weight:900;color:#1d4ed8;font-size:11px}.page-title{font-weight:900;font-size:15px;letter-spacing:-.04em}.course-pill{background:#eff6ff;color:#0b3f9b;border-radius:8px;padding:5px 8px;font-size:9px;text-align:center;font-weight:800}
+    .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
+    .kpi{background:white;border:1px solid #dbe3ef;border-radius:9px;padding:8px;text-align:center;min-height:64px;box-shadow:0 2px 6px rgba(15,23,42,.04)}
+    .kpi i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#1d6ff2;color:white;font-style:normal;font-size:11px;margin-bottom:4px}.kpi b{display:block;font-size:17px;color:#1d4ed8}.kpi span{font-size:9px;color:#475569}
+    .dash-grid{display:grid;grid-template-columns:1.05fr 1fr 1fr;gap:7px;grid-auto-rows:minmax(118px,auto)}
+    .card{background:white;border:1px solid #dbe3ef;border-radius:9px;padding:9px;position:relative;overflow:hidden}
+    .card h4{font-size:11px;margin:0 0 6px;color:#0f3678;letter-spacing:-.02em}.muted{color:#64748b}.tiny{font-size:9px;color:#64748b}.profile{grid-row:span 2}.profile-img{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#dde9ff,#fff);border:1px solid #cbd5e1;margin:4px auto 8px}.profile b{display:block;text-align:center;font-size:14px}.profile dl{display:grid;grid-template-columns:58px 1fr;gap:4px;font-size:9px;margin:8px 0}.qr{width:54px;height:54px;margin:8px auto;border:1px solid #94a3b8;background:repeating-linear-gradient(45deg,#111 0 2px,#fff 2px 4px)}
+    .line-chart{height:82px;position:relative;background:linear-gradient(#fff,#fff) padding-box}.line-chart svg{width:100%;height:72px}.note-bubble{position:absolute;right:12px;top:48px;background:#edf5ff;border-radius:12px;padding:7px 9px;text-align:center;font-size:9px;color:#1d4ed8;font-weight:800}
+    .radar{height:96px;display:grid;place-items:center}.radar svg{width:130px;height:92px}.bars .bar{display:grid;grid-template-columns:78px 1fr 28px;align-items:center;gap:5px;font-size:9px;margin:6px 0}.track{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden}.fill{height:100%;background:#1f6feb;border-radius:999px}.project-table{font-size:8px}.project-table th,.project-table td{padding:5px}.stars{color:#1d4ed8;letter-spacing:1px}.gauge{height:88px;display:grid;place-items:center}.gauge .arc{width:130px;height:70px;border-radius:130px 130px 0 0;background:conic-gradient(from 270deg,#1d4ed8 0 76%,#22c55e 76% 94%,#e5e7eb 94% 100%);position:relative;overflow:hidden}.arc:after{content:"94%";position:absolute;left:24px;right:24px;bottom:-28px;height:68px;border-radius:70px 70px 0 0;background:white;display:grid;place-items:center;font-size:27px;font-weight:900;color:#111827}.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.metric{background:#f8fafc;border-radius:7px;text-align:center;padding:5px 2px;font-size:8px}.metric b{display:block;color:#1d4ed8;font-size:12px}.list-card ul{margin:4px 0 0 15px;padding:0;font-size:9px}.list-card li{margin:4px 0}.opinion{grid-column:span 2}.opinion p{font-size:9px}.signature{text-align:right;font-family:cursive;color:#1f6feb;font-size:19px;margin-top:3px}
+    .report-panel{border:1px solid #d5dce8;border-radius:8px;background:#fff;padding:10px;position:relative}.report-title{background:#0b3f9b;color:#fff;border-radius:8px 8px 0 0;padding:10px;text-align:center;font-weight:900;font-size:13px}.report-panel h4{font-size:10px;color:#0b3f9b;margin:10px 0 5px}.report-panel table{font-size:8px}.report-panel th,.report-panel td{padding:4px}.growth-mini{display:grid;grid-template-columns:1fr 16px 1fr 16px 1fr;align-items:center;text-align:center;gap:3px;margin:6px 0}.growth-mini .score{background:#eaf2ff;border:1px solid #bcd4ff;border-radius:6px;padding:5px 2px;font-size:8px}.growth-mini b{display:block;color:#1d4ed8;font-size:12px}.stamp{width:38px;height:38px;border-radius:50%;border:3px double #ef4444;color:#ef4444;display:grid;place-items:center;margin:auto;font-size:8px;font-weight:900;transform:rotate(-12deg)}
+    .num{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:900;box-shadow:0 2px 6px rgba(239,68,68,.3);z-index:5}
+    .desc{border:1px solid #1f2937;background:#fff}.desc-title{padding:8px;text-align:center;font-weight:900;border-bottom:1px solid #1f2937;font-size:12px}.desc table{font-size:10px}.desc th,.desc td{padding:7px}.desc .no{width:32px;text-align:center;color:var(--red);font-weight:900}.desc b{display:block;margin-bottom:4px}.desc ul{margin:4px 0 0 14px;padding:0}.desc li{margin:3px 0}
+    .result-wire{display:grid;grid-template-columns:1fr 300px;gap:12px;min-height:550px}.report-wire{border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:14px}.report-wire .report-title{font-size:17px;margin:-14px -14px 14px}.field-grid{display:grid;grid-template-columns:88px 1fr;gap:0;font-size:11px;border:1px solid #cbd5e1}.field-grid div{border-right:1px solid #cbd5e1;border-bottom:1px solid #cbd5e1;padding:7px}.field-grid div:nth-child(2n){border-right:0}.field-grid div:nth-last-child(-n+2){border-bottom:0}.field-grid .label{background:#f8fafc;font-weight:800}.score-summary{margin-top:12px}.result-growth{display:grid;grid-template-columns:1fr 24px 1fr 24px 1fr;gap:6px;text-align:center;align-items:center;margin:12px 0}.result-growth .score{background:#eaf2ff;border:1px solid #bdd3f6;border-radius:8px;padding:10px;font-size:11px}.result-growth b{display:block;color:#1d4ed8;font-size:20px}.confirm{display:grid;grid-template-columns:1fr 1fr 70px;margin-top:12px;border:1px solid #cbd5e1}.confirm div{padding:9px;border-right:1px solid #cbd5e1;font-size:11px}.confirm div:last-child{border-right:0}
+    .legend{font-size:11px;color:#475569;margin-top:10px;padding:10px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px}.legend b{color:#111827}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}.caption{font-size:11px;color:#64748b;margin-top:10px}.checklist td:first-child{width:46px;text-align:center;font-weight:900;color:#1d4ed8}.print-note{position:absolute;right:32px;bottom:18px;color:#94a3b8;font-size:10px}
+    @media print{
+      body{background:#fff}.toolbar{display:none}.doc{margin:0;padding:0;max-width:100%}.page{width:100%;min-height:auto;margin:0;box-shadow:none;border:0;page-break-after:always}.page:last-child{page-break-after:auto}
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <strong>훈련생 성장 대시보드 / 성적 결과서 화면설계서</strong>
+    <span class="badge">HTML Wireframe Description</span>
+    <button onclick="window.print()">인쇄/PDF</button>
+  </div>
+
+  <main class="doc">
+    <section class="page cover">
+      <div>
+        <div class="kicker">GREEN COMPUTER ACADEMY · SAF FRAMEWORK</div>
+        <h1>훈련생 성장 대시보드 및<br>성적 결과서 화면설계서</h1>
+        <p class="sub">기업 제공용 성장 대시보드와 기업 제출용 성적 결과서를 하나의 산출 흐름으로 연결한 PC 화면설계 디스크립션입니다.</p>
+        <p class="caption">첨부 그래픽 UI 기반 역기획 · 개인정보 마스킹 기준 포함 · 인쇄/PDF 출력 대응</p>
+      </div>
+      <aside class="meta-card">
+        <h2>문서 정보</h2>
+        <dl>
+          <dt>버전</dt><dd>v1.0</dd>
+          <dt>작성일</dt><dd>2026.07.05</dd>
+          <dt>작성자</dt><dd>ONO17</dd>
+          <dt>대상 화면</dt><dd>PC 대시보드 / 결과서</dd>
+          <dt>페이지 수</dt><dd>5</dd>
+          <dt>검토 기준</dt><dd>제공 이미지 기반 화면설계</dd>
+        </dl>
+      </aside>
+      <div class="print-note">Page 0 · 표지</div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>히스토리</h2><small>작업설계서 변경 이력</small>
+      </div>
+      <table class="history">
+        <thead><tr><th>번호</th><th>날짜</th><th>유형</th><th>페이지</th><th>내용</th><th>비고</th><th>작성자</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>2026.07.05</td><td>신규</td><td>전체</td><td>훈련생 성장 대시보드와 성적 결과서 UI를 화면설계서 형식으로 전환</td><td>첨부 이미지 기반</td><td>ONO17</td></tr>
+          <tr><td>2</td><td>2026.07.05</td><td>정의</td><td>1~3</td><td>KPI, 성장 추이, 역량 평가, 프로젝트 수행 결과, 채용 적합도, 성적 결과서 출력 흐름 정의</td><td>PC 우선</td><td>ONO17</td></tr>
+          <tr><td>3</td><td>2026.07.05</td><td>보강</td><td>4</td><td>개인정보 마스킹, 상태/예외, 인쇄/PDF, QR 링크, 기업 제출용 확인 영역 기준 추가</td><td>운영 기준 포함</td><td>ONO17</td></tr>
+        </tbody>
+      </table>
+
+      <div class="section-title" style="margin-top:26px">
+        <h2>워크플로우</h2><small>데이터 수집부터 기업 제공까지</small>
+      </div>
+      <table class="info-table">
+        <tbody>
+          <tr><th>버전(ver)</th><td>1.0</td><th>코드</th><td>SAF-WF-001</td><th>페이지명</th><td>성장/성적 산출 플로우</td><th>이용자</th><td>교무·평가 운영자</td></tr>
+          <tr><th>작성일</th><td>2026.07.05</td><th>작성자</th><td>ONO17</td><th>페이지 검토</th><td>이미지 기반 역기획</td><th>페이지</th><td>1</td></tr>
+        </tbody>
+      </table>
+      <div class="flow">
+        <div class="step"><b>1. 원천 데이터</b><span>출석·평가·프로젝트·협업·포트폴리오 수집</span></div>
+        <div class="step"><b>2. 훈련생 선택</b><span>ID 기준 개인 데이터 호출 및 마스킹 적용</span></div>
+        <div class="step"><b>3. 대시보드 생성</b><span>KPI·차트·강점·보완점·교수자 의견 구성</span></div>
+        <div class="step"><b>4. 결과서 생성</b><span>평가항목·능력단위·성장 이력 요약</span></div>
+        <div class="step"><b>5. 기업 제공</b><span>대시보드 공유 또는 인쇄/PDF 제출</span></div>
+        <div class="step"><b>6. 피드백 반영</b><span>기업 의견·후속 지도·취업 적합도 보완</span></div>
+      </div>
+      <table>
+        <thead><tr><th style="width:80px">단계</th><th>설계 디스크립션</th><th>확인 기준</th></tr></thead>
+        <tbody>
+          <tr><td>수집</td><td>출석률, 평가점수, 프로젝트 수행 내역, 능력단위별 점수, 포트폴리오 링크를 개인 ID로 연결한다.</td><td>훈련생 ID 중복 없음, 결측값 표시 정책 적용</td></tr>
+          <tr><td>가공</td><td>기업 공유 전 이름, 생년월일 등 개인정보는 마스킹하고 기업명·직무포지션만 목적 범위 내 노출한다.</td><td>김*민, 생년월일 ****.**.** 등 마스킹 확인</td></tr>
+          <tr><td>산출</td><td>성장 대시보드는 설득용 시각 자료, 성적 결과서는 제출용 증빙 문서로 역할을 분리한다.</td><td>대시보드/결과서 화면 분리 출력 가능</td></tr>
+        </tbody>
+      </table>
+      <div class="print-note">Page 1 · Workflow</div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>와이어프레임_PC용 · 성장 대시보드</h2><small>기업 제공용</small>
+      </div>
+      <table class="info-table">
+        <tbody>
+          <tr><th>버전(ver)</th><td>1.0</td><th>페이지코드</th><td>SAF-GROWTH-PC</td><th>페이지명</th><td>훈련생 성장 대시보드</td><th>이용자</th><td>PC</td></tr>
+          <tr><th>작성일</th><td>2026.07.05</td><th>작성자</th><td>ONO17</td><th>페이지 검토</th><td>첨부 그래픽 UI 기반</td><th>페이지</th><td>2</td></tr>
+        </tbody>
+      </table>
+      <div class="layout" style="margin-top:10px">
+        <div class="screen-box">
+          <div class="screen-head"><div>훈련생 성장 대시보드 화면</div><div>Desktop</div><div>v1.0</div></div>
+          <div class="wire-dashboard">
+            <div class="vertical-band"><span>AI 활용 출판&광고콘텐츠 제작 기맞 추적·성적과정</span><span class="mini">훈련기간 정보</span><span class="num" style="left:8px;top:34px">1</span></div>
+            <div class="dash-main">
+              <span class="num" style="right:10px;top:8px">2</span>
+              <div class="product-header">
+                <div class="logo">S GREEN COMPUTER ACADEMY<br><span class="tiny">기업맞춤훈련 과정</span></div>
+                <div class="page-title">훈련생 성장 대시보드 (기업 제공용)</div>
+                <div class="course-pill">AI 활용 UI/UX 엔지니어링 과정<br>2026.03.02 ~ 2026.06.30</div>
+              </div>
+              <div class="kpi-row">
+                <div class="kpi"><i>✓</i><b>98%</b><span>출석률</span></div>
+                <div class="kpi"><i>★</i><b>87점</b><span>최종평가 평균</span></div>
+                <div class="kpi"><i>↗</i><b>+35점</b><span>성장률</span></div>
+                <div class="kpi"><i>👥</i><b>100%</b><span>프로젝트 참여율</span></div>
+                <div class="kpi"><i>A</i><b>A</b><span>협업등급</span></div>
+              </div>
+              <span class="num" style="left:12px;top:98px">3</span>
+              <div class="dash-grid">
+                <div class="card profile">
+                  <div class="profile-img"></div>
+                  <b>김*민</b><p class="tiny" style="text-align:center">KIM*MİN</p>
+                  <dl><dt>훈련생 ID</dt><dd>SAF-2026-015</dd><dt>생년월일</dt><dd>****.**.**</dd><dt>소속기업</dt><dd>(주)ABC소프트</dd><dt>직무포지션</dt><dd>UI/UX 디자이너</dd></dl>
+                  <div class="qr"></div><p class="tiny" style="text-align:center;color:#1d4ed8;font-weight:800">포트폴리오 바로가기</p>
+                </div>
+                <div class="card">
+                  <h4>성장 추이 (Growth Trend)</h4>
+                  <div class="line-chart">
+                    <svg viewBox="0 0 210 80" aria-label="성장 추이 예시 차트"><line x1="20" y1="62" x2="190" y2="62" stroke="#e5e7eb"/><line x1="20" y1="42" x2="190" y2="42" stroke="#e5e7eb"/><line x1="20" y1="22" x2="190" y2="22" stroke="#e5e7eb"/><polyline points="28,54 100,38 178,20" fill="none" stroke="#1f6feb" stroke-width="3"/><circle cx="28" cy="54" r="4" fill="#1f6feb"/><circle cx="100" cy="38" r="4" fill="#1f6feb"/><circle cx="178" cy="20" r="4" fill="#1f6feb"/><text x="20" y="48" font-size="10">52</text><text x="92" y="32" font-size="10">71</text><text x="170" y="14" font-size="10">87</text></svg>
+                    <div class="note-bubble">+35점 향상<br><span class="tiny">+67%</span></div>
+                  </div>
+                </div>
+                <div class="card">
+                  <h4>역량별 평가 (6대 역량)</h4>
+                  <div class="radar"><svg viewBox="0 0 150 105"><polygon points="75,8 130,32 121,85 75,100 28,85 20,32" fill="none" stroke="#cbd5e1"/><polygon points="75,18 118,38 108,75 75,88 36,78 31,38" fill="rgba(31,111,235,.16)" stroke="#1f6feb" stroke-width="2"/><circle cx="75" cy="18" r="3" fill="#1f6feb"/><circle cx="118" cy="38" r="3" fill="#1f6feb"/><circle cx="108" cy="75" r="3" fill="#1f6feb"/><circle cx="75" cy="88" r="3" fill="#1f6feb"/><circle cx="36" cy="78" r="3" fill="#1f6feb"/><circle cx="31" cy="38" r="3" fill="#1f6feb"/></svg></div>
+                </div>
+                <div class="card bars">
+                  <h4>능력단위별 점수</h4>
+                  <div class="bar"><span>UI 설계</span><div class="track"><div class="fill" style="width:92%"></div></div><b>92</b></div>
+                  <div class="bar"><span>UX 기획/분석</span><div class="track"><div class="fill" style="width:84%"></div></div><b>84</b></div>
+                  <div class="bar"><span>AI 활용 능력</span><div class="track"><div class="fill" style="width:90%"></div></div><b>90</b></div>
+                  <div class="bar"><span>프로젝트 이해</span><div class="track"><div class="fill" style="width:82%"></div></div><b>82</b></div>
+                  <div class="bar"><span>협업/커뮤니케이션</span><div class="track"><div class="fill" style="width:95%"></div></div><b>95</b></div>
+                  <div class="bar"><span>문서화/보고</span><div class="track"><div class="fill" style="width:78%"></div></div><b>78</b></div>
+                  <span class="num" style="left:8px;top:8px">4</span>
+                </div>
+                <div class="card">
+                  <h4>프로젝트 수행 결과</h4>
+                  <table class="project-table"><thead><tr><th>프로젝트명</th><th>역할</th><th>수행기간</th><th>평가등급</th></tr></thead><tbody><tr><td>서비스 기획 및 UI 설계</td><td>UI 설계</td><td>03.16~04.24</td><td>우수<br><span class="stars">★★★★★</span></td></tr><tr><td>AI 챗봇 UI/UX 개발</td><td>UX 리서치</td><td>04.27~05.28</td><td>우수<br><span class="stars">★★★★★</span></td></tr><tr><td>포트폴리오 웹사이트</td><td>디자인/프론트</td><td>05.29~06.25</td><td>우수<br><span class="stars">★★★★★</span></td></tr></tbody></table>
+                </div>
+                <div class="card">
+                  <h4>채용 적합도 (Recruitment Fit)</h4>
+                  <div class="gauge"><div class="arc"></div></div>
+                  <div class="metric-row"><div class="metric"><b>92%</b>실무 이해</div><div class="metric"><b>95%</b>학습 협업성</div><div class="metric"><b>92%</b>협업 적응력</div><div class="metric"><b>95%</b>업무 태도</div></div>
+                  <span class="num" style="left:8px;top:8px">5</span>
+                </div>
+                <div class="card list-card"><h4>강점 (Strengths)</h4><ul><li>AI 도구 활용 능력 우수</li><li>UI 설계 및 사용자 경험 이해도 높음</li><li>프로젝트 전 과정 참여와 협업 우수</li><li>피드백 반영 및 개선 속도 빠름</li></ul></div>
+                <div class="card list-card"><h4>보완점 (Development Areas)</h4><ul><li>프론트엔드 심화 학습 필요</li><li>디자인 근거 문서화 습관 강화</li><li>발표 구조화 연습 추가 필요</li></ul></div>
+                <div class="card opinion"><h4>교수자 종합 의견</h4><p>전반적인 실무 역량이 우수하며, AI 도구를 활용한 문제 해결 능력이 뛰어납니다. 기업 프로젝트 투입 시 즉시 기여 가능한 수준으로 성장했습니다.</p><div class="signature">Onda</div></div>
+              </div>
+            </div>
+            <div class="report-panel">
+              <span class="num" style="right:8px;top:8px">6</span>
+              <div class="report-title">훈련생 성적 결과서<br><span class="tiny" style="color:#dbeafe">기업 제출용</span></div>
+              <h4>훈련생 정보</h4>
+              <table><tbody><tr><th>훈련생명</th><td>김*민</td></tr><tr><th>훈련생 ID</th><td>SAF-2026-015</td></tr><tr><th>과정명</th><td>AI 활용 UI/UX 엔지니어링</td></tr><tr><th>훈련기간</th><td>2026.03.02~06.30</td></tr><tr><th>소속기업</th><td>(주)ABC소프트</td></tr></tbody></table>
+              <h4>평가 결과 요약</h4>
+              <table><thead><tr><th>항목</th><th>만점</th><th>취득</th><th>달성률</th></tr></thead><tbody><tr><td>출석</td><td>20</td><td>20</td><td>100%</td></tr><tr><td>과제</td><td>20</td><td>18</td><td>90%</td></tr><tr><td>프로젝트</td><td>40</td><td>35</td><td>87.5%</td></tr><tr><td>중간평가</td><td>10</td><td>8</td><td>80%</td></tr><tr><td>최종평가</td><td>10</td><td>8</td><td>80%</td></tr><tr><th>합계</th><th>100</th><th>87</th><th>87%</th></tr></tbody></table>
+              <h4>성장 이력</h4>
+              <div class="growth-mini"><div class="score">사전진단<b>52점</b></div><div>→</div><div class="score">중간평가<b>71점</b></div><div>→</div><div class="score">최종평가<b>87점</b></div></div>
+              <p class="tiny" style="text-align:center;color:#1d4ed8;font-weight:900">+35점 향상 (+67%)</p>
+              <h4>확인자</h4><div class="stamp">확인</div>
+            </div>
+          </div>
+        </div>
+        <aside class="desc">
+          <div class="desc-title">Description</div>
+          <table>
+            <tbody>
+              <tr><td class="no">1</td><td><b>과정 식별 사이드바</b><ul><li>기업맞춤/과정명/훈련기간을 세로 배너로 고정한다.</li><li>보고서 캡처 또는 PDF 출력 시 화면 목적을 즉시 식별한다.</li></ul></td></tr>
+              <tr><td class="no">2</td><td><b>헤더/과정 태그</b><ul><li>기관 로고, 화면명, 과정명, 기간을 상단에 배치한다.</li><li>기업 제공용 화면과 제출용 결과서를 명확히 구분한다.</li></ul></td></tr>
+              <tr><td class="no">3</td><td><b>핵심 KPI</b><ul><li>출석률, 최종평가, 성장률, 프로젝트 참여율, 협업등급을 카드형으로 노출한다.</li><li>아이콘+숫자+보조설명 구조를 유지한다.</li></ul></td></tr>
+              <tr><td class="no">4</td><td><b>개인 프로필/능력단위</b><ul><li>이름과 생년월일은 마스킹한다.</li><li>QR은 포트폴리오 또는 검증용 링크로 연결한다.</li><li>능력단위 점수는 기업이 빠르게 비교할 수 있게 막대그래프로 제공한다.</li></ul></td></tr>
+              <tr><td class="no">5</td><td><b>프로젝트/채용 적합도</b><ul><li>프로젝트 수행 결과는 역할, 기간, 등급을 함께 표시한다.</li><li>채용 적합도는 현장 투입 가능성을 한눈에 보여주는 요약 지표로 사용한다.</li></ul></td></tr>
+              <tr><td class="no">6</td><td><b>성적 결과서 미리보기</b><ul><li>제출용 결과서의 핵심 구조를 우측에 동시 노출한다.</li><li>평가 요약, 성장 이력, 확인자 영역을 포함한다.</li></ul></td></tr>
+            </tbody>
+          </table>
+        </aside>
+      </div>
+      <div class="legend"><b>붉은 번호:</b> 화면 디스크립션 참조 · <b>파란 계열:</b> 핵심 지표/기업 제공 정보 · <b>마스킹:</b> 외부 제출 전 개인정보 보호 기준</div>
+      <div class="print-note">Page 2 · Dashboard Wireframe</div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>와이어프레임_PC용 · 성적 결과서</h2><small>기업 제출용</small>
+      </div>
+      <table class="info-table">
+        <tbody>
+          <tr><th>버전(ver)</th><td>1.0</td><th>페이지코드</th><td>SAF-REPORT-PC</td><th>페이지명</th><td>훈련생 성적 결과서</td><th>이용자</th><td>PC / Print</td></tr>
+          <tr><th>작성일</th><td>2026.07.05</td><th>작성자</th><td>ONO17</td><th>페이지 검토</th><td>첨부 그래픽 UI 기반</td><th>페이지</th><td>3</td></tr>
+        </tbody>
+      </table>
+      <div class="layout" style="margin-top:10px">
+        <div class="screen-box">
+          <div class="screen-head"><div>성적 결과서 화면</div><div>Desktop / A4</div><div>v1.0</div></div>
+          <div class="result-wire">
+            <div class="report-wire">
+              <span class="num" style="left:8px;top:8px">1</span>
+              <div class="report-title">훈련생 성적 결과서 <span class="tiny" style="color:#dbeafe">기업 제출용 · SAF FRAMEWORK</span></div>
+              <h3>훈련생 정보</h3>
+              <div class="field-grid">
+                <div class="label">훈련생명</div><div>김*민</div><div class="label">훈련생 ID</div><div>SAF-2026-015</div><div class="label">과정명</div><div>AI 활용 UI/UX 엔지니어링</div><div class="label">훈련기간</div><div>2026.03.02 ~ 2026.06.30 (16주)</div><div class="label">훈련기관</div><div>그린컴퓨터아카데미</div><div class="label">소속기업</div><div>(주)ABC소프트</div>
+              </div>
+              <span class="num" style="left:8px;top:170px">2</span>
+              <div class="score-summary"><h3>평가 결과 요약</h3><table><thead><tr><th>평가항목</th><th>만점</th><th>취득점수</th><th>달성률</th></tr></thead><tbody><tr><td>출석</td><td>20</td><td>20</td><td>100%</td></tr><tr><td>과제</td><td>20</td><td>18</td><td>90%</td></tr><tr><td>프로젝트</td><td>40</td><td>35</td><td>87.5%</td></tr><tr><td>중간평가</td><td>10</td><td>8</td><td>80%</td></tr><tr><td>최종평가</td><td>10</td><td>8</td><td>80%</td></tr><tr><th>합계</th><th>100</th><th>87</th><th>87%</th></tr></tbody></table></div>
+              <span class="num" style="left:8px;top:336px">3</span>
+              <div class="score-summary"><h3>능력단위별 평가 결과</h3><table><thead><tr><th>능력단위</th><th>점수</th><th>등급</th></tr></thead><tbody><tr><td>UI 설계</td><td>92</td><td>A</td></tr><tr><td>UX 기획/분석</td><td>84</td><td>B+</td></tr><tr><td>AI 활용 능력</td><td>90</td><td>A</td></tr><tr><td>프로젝트 이해</td><td>82</td><td>B+</td></tr><tr><td>협업 및 커뮤니케이션</td><td>95</td><td>A</td></tr><tr><td>문서화/보고</td><td>78</td><td>B</td></tr></tbody></table></div>
+            </div>
+            <div>
+              <div class="report-wire" style="margin-bottom:12px;min-height:264px">
+                <span class="num" style="right:8px;top:8px">4</span>
+                <h3>성장 이력</h3>
+                <div class="result-growth"><div class="score">사전진단<b>52점</b></div><div>→</div><div class="score">중간평가<b>71점</b></div><div>→</div><div class="score">최종평가<b>87점</b></div></div>
+                <p style="text-align:center;color:#1d4ed8;font-weight:900;font-size:19px">+35점 향상 (+67%)</p>
+                <p class="tiny" style="text-align:center">성장 추이는 대시보드의 Growth Trend와 동일한 기준값을 사용한다.</p>
+              </div>
+              <div class="report-wire" style="min-height:210px">
+                <span class="num" style="right:8px;top:8px">5</span>
+                <h3>확인자</h3>
+                <div class="confirm"><div><b>확인자</b></div><div><b>지도교수</b><br>온다쌤</div><div><div class="stamp">확인</div></div></div>
+                <p class="caption">발급일, 평가기관, 직인 또는 확인 이미지를 하단 영역에 배치한다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="desc">
+          <div class="desc-title">Description</div>
+          <table>
+            <tbody>
+              <tr><td class="no">1</td><td><b>문서 헤더/훈련생 정보</b><ul><li>기업 제출 문서임을 제목에서 명시한다.</li><li>훈련생명·ID·과정명·훈련기간·기관·소속기업을 표준 필드로 제공한다.</li></ul></td></tr>
+              <tr><td class="no">2</td><td><b>평가 결과 요약</b><ul><li>항목별 만점, 취득점수, 달성률을 동일 행에서 확인한다.</li><li>합계 행은 배경 또는 굵기 처리로 강조한다.</li></ul></td></tr>
+              <tr><td class="no">3</td><td><b>능력단위별 평가</b><ul><li>대시보드의 막대그래프 원천 데이터를 표 형태로 변환한다.</li><li>점수와 등급을 병기해 기업 담당자가 빠르게 판단하도록 한다.</li></ul></td></tr>
+              <tr><td class="no">4</td><td><b>성장 이력</b><ul><li>사전진단→중간평가→최종평가 흐름을 단계형 카드로 표현한다.</li><li>향상 점수와 향상률을 별도 강조한다.</li></ul></td></tr>
+              <tr><td class="no">5</td><td><b>확인/발급 영역</b><ul><li>지도교수, 확인자, 발급일, 평가기관, 직인 이미지를 배치한다.</li><li>PDF 출력 시 하단이 잘리지 않도록 여백을 확보한다.</li></ul></td></tr>
+            </tbody>
+          </table>
+        </aside>
+      </div>
+      <div class="print-note">Page 3 · Result Report Wireframe</div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>공통 컴포넌트/상태 디스크립션</h2><small>SAF-COMMON-DESC · Page 4</small>
+      </div>
+      <table class="checklist">
+        <thead><tr><th>No</th><th>대상</th><th>설계 디스크립션</th><th>상태/예외</th><th>접근성·운영 기준</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>KPI 카드</td><td>핵심 성과를 아이콘, 지표값, 보조 설명의 3단 구조로 제공한다.</td><td>정상, 데이터 없음, 산식 오류, 기준 미달</td><td>색상만으로 상태를 전달하지 않고 텍스트 라벨을 함께 둔다.</td></tr>
+          <tr><td>2</td><td>성장 추이 차트</td><td>사전진단, 중간평가, 최종평가의 변화량을 선형 그래프로 제공한다.</td><td>1개 값만 존재, 동점, 하락, 결측</td><td>각 포인트에는 점수 라벨을 제공하고 PDF 출력 시 라벨 겹침을 확인한다.</td></tr>
+          <tr><td>3</td><td>역량 레이더/막대 차트</td><td>6대 역량은 레이더로, 능력단위 점수는 막대로 제공해 시각적 비교를 분리한다.</td><td>0점, 100점, 기준 초과 입력, 항목명 장문</td><td>항목명이 길 경우 줄바꿈하고, 차트 원천값은 표에서도 확인 가능해야 한다.</td></tr>
+          <tr><td>4</td><td>프로젝트 수행 결과</td><td>프로젝트명, 역할, 수행기간, 평가등급을 표준 열로 구성한다.</td><td>프로젝트 미참여, 평가 보류, 기간 미입력</td><td>등급 별표는 보조표현이며 텍스트 등급을 반드시 병기한다.</td></tr>
+          <tr><td>5</td><td>채용 적합도 게이지</td><td>현장 투입 가능성을 요약 지표로 제공하고 실무 이해, 협업, 적응, 태도를 보조 지표로 둔다.</td><td>산식 미정, 기준값 미달, 기업별 기준 다름</td><td>게이지 색상 의미를 툴팁 또는 범례로 설명한다.</td></tr>
+          <tr><td>6</td><td>개인정보 마스킹</td><td>외부 제공 화면은 이름 일부, 생년월일, 개인 연락처 등 식별정보를 기본 마스킹한다.</td><td>내부 열람, 기업 제출, 익명 공유</td><td>기업 제출 목적과 범위에 맞는 최소 정보만 노출한다.</td></tr>
+          <tr><td>7</td><td>포트폴리오 QR</td><td>포트폴리오 또는 검증 링크로 이동하는 QR을 프로필 카드에 제공한다.</td><td>링크 만료, 권한 없음, 비공개</td><td>QR 옆에 대체 텍스트 링크명을 함께 제공한다.</td></tr>
+          <tr><td>8</td><td>인쇄/PDF</td><td>대시보드는 가로형, 결과서는 세로형/A4 제출 문서로 출력 가능해야 한다.</td><td>페이지 잘림, 차트 흐림, 배경 미출력</td><td>브라우저 인쇄 시 배경 그래픽 옵션 안내 또는 PDF 전용 스타일을 제공한다.</td></tr>
+        </tbody>
+      </table>
+      <div class="two-col" style="margin-top:18px">
+        <div class="meta-card"><h3>데이터 필드 권장 구조</h3><p class="tiny">trainee_id, masked_name, course_name, training_period, company, job_position, attendance_rate, final_score, growth_score, project_participation_rate, collaboration_grade, competency_scores, project_results, recruitment_fit, strengths, development_areas, instructor_comment, issue_date</p></div>
+        <div class="meta-card"><h3>다음 작업 제안</h3><p class="tiny">① 실제 구글시트 원천 컬럼명 매핑 ② 대시보드/결과서 HTML 템플릿 분리 ③ PDF 출력 CSS 보정 ④ QR 링크 권한 정책 확정 ⑤ 기업 제출 전 개인정보 검수 체크리스트 적용</p></div>
+      </div>
+      <div class="legend"><b>운영 메모:</b> 기업 제공용은 성장과 가능성을 설명하는 시각 자료, 기업 제출용은 평가 결과를 증빙하는 문서로 역할을 나누는 것이 좋습니다.</div>
+      <div class="print-note">Page 4 · Common Description</div>
+    </section>
+  </main>
+</body>
+</html>

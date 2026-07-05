@@ -220,8 +220,7 @@ function renderMatrixRow(student, index) {
 
 function renderTeamSummary(team, roster) {
   const members = roster.filter((student) => student.team.id === team.id);
-  const scores = team.summaryScores || {};
-  const avgFit = isMissing(scores.fit) ? averageFor(members, "fit") : scores.fit;
+  const avgCollaboration = averageFor(members, "project");
   const avgFinal = averageFor(members, "final");
   const avgProject = avgScore(members.map((student) => summaryProject1Score(student)));
   const memberNames = team.members.map((name) => {
@@ -233,9 +232,9 @@ function renderTeamSummary(team, roster) {
     '<article class="summary-team">',
       '<div><strong>' + esc(team.id) + '</strong></div>',
       '<div class="summary-team-score">',
-        '<span>적합도 ' + esc(isMissing(avgFit) ? "-" : one(avgFit) + "%") + '</span>',
-        '<span>본평가 ' + esc(scoreLabel(avgFinal)) + '</span>',
-        '<span>프로젝트1 ' + esc(scoreLabel(avgProject)) + '</span>',
+        '<span>협업 평균 ' + esc(scoreLabel(avgCollaboration)) + '</span>',
+        '<span>본평가 평균 ' + esc(scoreLabel(avgFinal)) + '</span>',
+        '<span>프로젝트1 평균 ' + esc(scoreLabel(avgProject)) + '</span>',
       '</div>',
       '<div class="summary-team-members">' + memberNames + '</div>',
       teamEvidence(team),
@@ -262,10 +261,9 @@ function renderSummaryPage() {
   const totalDays = sumFor(active, "totalDays");
   const attendanceRate = totalDays ? attendedDays / totalDays * 100 : null;
   const highFit = active.filter((student) => !isMissing(student.fit) && student.fit >= 90);
-  const collaborationA = active.filter((student) => student.grade === "A");
   const growthFocusStudents = active.filter((student) => student.group === "성장관리" || student.group === "참여안정" || student.final < 80 || student.fit < 85);
   const matrix = [...active].sort((a, b) => Number(b.fit || 0) - Number(a.fit || 0));
-  const topLine = matrix.slice(0, 3).map((student) => student.maskedName + " " + student.fit + "%").join("<br>");
+  const recommendedLine = matrix.slice(0, 3).map((student) => student.maskedName + " " + student.fit + "%").join("<br>");
   const riskLine = [
     ...dropouts.map((student) => student.name + " 중도탈락"),
     ...growthFocusStudents.map((student) => student.maskedName + " " + student.group)
@@ -292,7 +290,7 @@ function renderSummaryPage() {
           '</div>',
           '<section class="summary-panel matrix-panel">',
             '<div class="section-title"><h3>종합성과</h3><span>중탈 제외 통계 · 적합도 기준 정렬</span></div>',
-            '<div class="matrix-head"><span>순위</span><span>훈련생</span><span>팀</span><span>본평가</span><span>프로젝트1</span><span>채용 적합도</span></div>',
+            '<div class="matrix-head"><span>순위</span><span>훈련생</span><span>팀</span><span>본평가</span><span>개인 프로젝트1</span><span>채용 적합도</span></div>',
             '<div class="matrix-list">' + matrix.map(renderMatrixRow).join("") + '</div>',
           '</section>',
         '</section>',
@@ -300,9 +298,8 @@ function renderSummaryPage() {
           '<section class="summary-panel insight-panel">',
             '<div class="section-title"><h3>기업 맞춤 인재 추천</h3></div>',
             '<div class="insight-stack">',
-              '<div><strong>' + esc(highFit.length) + '명</strong><span>채용 적합도 90% 이상</span></div>',
-              '<div><strong>' + esc(collaborationA.length) + '명</strong><span>A등급 협업 지표</span></div>',
-              '<div><strong>' + topLine + '</strong></div>',
+              '<div><strong>' + esc(highFit.length) + '명</strong><span>채용 적합도</span><em>90% 이상</em></div>',
+              '<div class="insight-combo"><strong>3명</strong><span>채용 적합도 상위</span><b>' + recommendedLine + '</b></div>',
             '</div>',
           '</section>',
           '<section class="summary-panel team-summary-panel">',
@@ -506,7 +503,7 @@ function renderPageOne(student) {
           </div>
         </section>
 
-        <aside class="team-panel">
+        <aside class="team-panel" data-context="${attr(cfg.projectName + " / " + student.team.id)}">
           <div class="section-title">
             <h3>${esc(student.team.id)} 팀 정보</h3>
           </div>
@@ -853,10 +850,24 @@ function selectedCoverForTeam(form, team) {
 }
 
 function validateCoverSelectionForm(form) {
-  const missingTeams = (cfg.teams || []).filter((team) => !selectedCoverForTeam(form, team)).map((team) => team.id);
-  if (!missingTeams.length) return true;
-  const message = "팀별 표지를 모두 선택해주세요. 미선택: " + missingTeams.join(", ");
+  const teams = cfg.teams || [];
+  const missingSelectionTeams = teams.filter((team) => !selectedCoverForTeam(form, team));
+  const missingReasonTeams = teams.filter((team) => {
+    const reason = form.querySelector(`textarea[name="${coverFieldName(team, "reason")}"]`);
+    return !reason || !reason.value.trim();
+  });
+  if (!missingSelectionTeams.length && !missingReasonTeams.length) return true;
+
+  const details = [];
+  if (missingSelectionTeams.length) details.push("표지 미선택: " + missingSelectionTeams.map((team) => team.id).join(", "));
+  if (missingReasonTeams.length) details.push("선정이유 미입력: " + missingReasonTeams.map((team) => team.id).join(", "));
+  const message = "팀별 표지와 선정 이유를 모두 입력해주세요. " + details.join(" · ");
+  const focusTeam = missingSelectionTeams[0] || missingReasonTeams[0];
+  const focusTarget = missingSelectionTeams[0]
+    ? form.querySelector(`input[name="${coverFieldName(focusTeam)}"]`)
+    : form.querySelector(`textarea[name="${coverFieldName(focusTeam, "reason")}"]`);
   setFeedbackStatus(form, message, "error");
+  if (focusTarget && typeof focusTarget.focus === "function") focusTarget.focus();
   if (typeof window.alert === "function") window.alert(message);
   return false;
 }
@@ -877,7 +888,7 @@ function collectCoverSelectionPayload(form) {
     selections[team.id] = {
       selectedId: selected ? selected.id : "",
       selectedLabel: selected ? selected.label : "",
-      reason: reason ? reason.value : "",
+      reason: reason ? reason.value.trim() : "",
       coverOutputUrl: coverFile ? coverFile.url : "",
       imageUrl: selected ? selected.image : ""
     };
@@ -984,7 +995,7 @@ function renderCoverSelectionTeam(team) {
         </div>
         <label class="cover-reason">
           <strong>선정 이유</strong>
-          <textarea name="${coverFieldName(team, "reason")}" aria-label="${esc(team.id)} 표지 선정 이유" placeholder="선정 이유를 입력하세요."></textarea>
+          <textarea name="${coverFieldName(team, "reason")}" aria-label="${esc(team.id)} 표지 선정 이유" placeholder="선정 이유를 입력하세요." required></textarea>
         </label>
       </div>
     </section>
