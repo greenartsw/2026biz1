@@ -26,8 +26,9 @@ const HEADERS = [
 ];
 
 function doGet(e) {
-  const action = String((e.parameter && e.parameter.action) || "");
-  const callback = String((e.parameter && e.parameter.callback) || "");
+  const params = (e && e.parameter) || {};
+  const action = String(params.action || "");
+  const callback = String(params.callback || "");
   const payload = action === "completed"
     ? getCompletedFeedbackPayload_()
     : { ok: true, message: "student feedback endpoint" };
@@ -194,4 +195,9 @@ function firstValue_(record, keys) {
 
 function normalizeKey_(value) {
   return String(value || "").replace(/\s+/g, "").replace(/○/g, "O").toLowerCase();
+}
+
+function testDoGetCompleted() {
+  const output = doGet({ parameter: { action: "completed" } });
+  Logger.log(output.getContent());
 }

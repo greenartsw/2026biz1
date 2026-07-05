@@ -56,6 +56,16 @@ function esc(value) {
   })[match]);
 }
 
+function attr(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (match) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[match]);
+}
+
 function isMissing(value) {
   return value === null || value === undefined || value === "" || value === "중탈";
 }
@@ -532,7 +542,19 @@ function setFeedbackStatus(form, message, tone = "neutral") {
 }
 
 function feedbackFormStudent(form) {
-  const page = form.closest(".report-page");
+  const formKey = form && form.dataset ? form.dataset.studentKey : "";
+  if (formKey) {
+    const matchedByFormKey = students.find((item) => formStudentKey(item) === formKey);
+    if (matchedByFormKey) return matchedByFormKey;
+  }
+
+  const page = form && form.closest ? form.closest(".report-page") : null;
+  const pageKey = page && page.dataset.studentKey;
+  if (pageKey) {
+    const matchedByPageKey = students.find((item) => formStudentKey(item) === pageKey);
+    if (matchedByPageKey) return matchedByPageKey;
+  }
+
   const studentName = page ? page.dataset.student : selectedStudent().name;
   return students.find((item) => item.name === studentName || item.maskedName === studentName || displayName(item.name) === studentName) || selectedStudent();
 }
@@ -925,8 +947,9 @@ function renderCoverSelectionPage() {
 }
 
 function renderPageTwo(student) {
+  const studentKey = formStudentKey(student);
   return `
-    <section class="report-page page-two" data-page="2" data-student="${esc(student.name)}">
+    <section class="report-page page-two" data-page="2" data-student="${esc(student.name)}" data-student-key="${attr(studentKey)}">
       ${pageHeader(student, "2P")}
       <div class="feedback-top">
         <section class="comment-card strength-card">
@@ -956,14 +979,14 @@ function renderPageTwo(student) {
       </div>
 
       <div class="feedback-bottom">
-        <form class="enterprise-form">
+        <form class="enterprise-form" data-student-key="${attr(studentKey)}">
           <div class="form-heading">
             <div>
               <p class="eyebrow">기업 회신용</p>
               <h2>${esc(student.name)} 훈련생 피드백</h2>
             </div>
             <div class="form-actions">
-              <button class="feedback-submit" type="submit"${isFeedbackCompleted(student) ? " disabled" : ""}>${isFeedbackCompleted(student) ? "멘토링 완료" : "훈련생 피드백 저장"}</button>
+              <button class="feedback-submit" type="submit" data-student-key="${attr(studentKey)}"${isFeedbackCompleted(student) ? " disabled" : ""}>${isFeedbackCompleted(student) ? "멘토링 완료" : "훈련생 피드백 저장"}</button>
             </div>
           </div>
           <div class="rating-table">
@@ -1047,6 +1070,11 @@ function studentOptionValue(student) {
 
 function studentRouteName(student) {
   return student.maskedName || maskName(student.name);
+}
+
+function formStudentKey(student) {
+  if (!student) return "";
+  return slug([student.name, student.maskedName, student.team && student.team.id].filter(Boolean).join("_"));
 }
 
 function handleStudentSelectChange() {
