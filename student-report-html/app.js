@@ -122,8 +122,8 @@ function classify(student) {
   if (student.fit >= 94) return "최우수";
   if (student.fit >= 91) return "우수";
   if (student.project >= 91 || student.grade === "A") return "협업강점";
-  if (student.final < 80 || student.fit < 85) return "보완관리";
-  if (student.attendance < 90) return "출석관리";
+  if (student.final < 80 || student.fit < 85) return "성장관리";
+  if (student.attendance < 90) return "참여안정";
   return "안정";
 }
 function buildInsights(student) {
@@ -150,10 +150,10 @@ function buildInsights(student) {
   if (!strengths.length) strengths.push(`${cfg.projectName} 수행 흐름과 과정 참여 지표가 전반적으로 안정적입니다.`);
 
   if (!needs.length) {
-    if (student.final < 80) needs.push(`본(재)평가 ${one(student.final)}점으로 실무 기초 보완 과제가 필요합니다.`);
-    if (student.attendance < 90) needs.push(`출석률 ${student.attendance}%로 보강 일정과 참여 안정화 확인이 필요합니다.`);
-    if (!isMissing(growth) && growth < 0) needs.push(`사전평가 대비 본평가가 ${signed(growth)}로 하락해 산출물 단위 원인 점검이 필요합니다.`);
-    if (summaryProject1Score(student) < 85) needs.push(`${cfg.projectName} 산출물의 완성도와 개인 역할 설명을 보완해야 합니다.`);
+    if (student.final < 80) needs.push(`본(재)평가 ${one(student.final)}점 기준으로 실무 기초를 더 정교화할 수 있습니다.`);
+    if (student.attendance < 90) needs.push(`출석률 ${student.attendance}% 기준으로 참여 안정화 흐름을 함께 확인하면 좋습니다.`);
+    if (!isMissing(growth) && growth < 0) needs.push(`사전평가 대비 본평가 변화가 ${signed(growth)}로 나타나 산출물별 성장 흐름을 함께 살펴볼 수 있습니다.`);
+    if (summaryProject1Score(student) < 85) needs.push(`${cfg.projectName} 산출물의 완성도와 개인 역할 설명을 더 구체화할 수 있습니다.`);
     if (student.diagnostic < 75) needs.push(`사전진단 취약 단원을 중심으로 포트폴리오 설명을 정리해야 합니다.`);
   }
   if (!needs.length) needs.push("기업 제출 전 포트폴리오 설명 구조와 프로젝트 역할 서술을 더 선명하게 정리하면 좋습니다.");
@@ -263,13 +263,13 @@ function renderSummaryPage() {
   const attendanceRate = totalDays ? attendedDays / totalDays * 100 : null;
   const highFit = active.filter((student) => !isMissing(student.fit) && student.fit >= 90);
   const collaborationA = active.filter((student) => student.grade === "A");
-  const riskStudents = active.filter((student) => student.group === "보완관리" || student.group === "출석관리" || student.final < 80 || student.fit < 85);
+  const growthFocusStudents = active.filter((student) => student.group === "성장관리" || student.group === "참여안정" || student.final < 80 || student.fit < 85);
   const matrix = [...active].sort((a, b) => Number(b.fit || 0) - Number(a.fit || 0));
   const topLine = matrix.slice(0, 3).map((student) => student.maskedName + " " + student.fit + "%").join("<br>");
   const riskLine = [
     ...dropouts.map((student) => student.name + " 중도탈락"),
-    ...riskStudents.map((student) => student.maskedName + " " + student.group)
-  ].join(" · ") || "주요 운영 리스크 없음";
+    ...growthFocusStudents.map((student) => student.maskedName + " " + student.group)
+  ].join(" · ") || "추가 확인 대상 없음";
 
   return [
     '<section class="report-page summary-page" data-page="summary">',
@@ -367,7 +367,7 @@ function teamEvidence(team) {
 }
 function teamAggregateOpinion(student) {
   if (student && student.team && student.team.teamOpinion) return student.team.teamOpinion;
-  return "팀 산출물의 완성도, 협업 과정, 기업 공유 전 보완 방향을 종합해 확인합니다.";
+  return "팀 산출물의 완성도, 협업 과정, 실무 적용 가능성을 종합해 확인합니다.";
 }
 
 function combinedTeacherOpinion(student) {
@@ -467,7 +467,7 @@ function renderPageOne(student) {
             <div class="identity-title">
               <h2>${esc(student.name)}</h2>
               ${chip(student.maskedName)}
-              ${chip(student.group, student.group === "중탈" || student.group === "보완관리" ? "coral" : student.group === "최우수" ? "teal" : "blue")}
+              ${chip(student.group, student.group === "중탈" || student.group === "성장관리" || student.group === "참여안정" ? "coral" : student.group === "최우수" ? "teal" : "blue")}
             </div>
             <p>${esc(cfg.sourceNote)}</p>
             <div class="mini-summary">
@@ -1031,7 +1031,7 @@ function renderPageTwo(student) {
         </section>
         <section class="comment-card improve-card">
           <div class="section-title">
-            <h3>보완점</h3>
+            <h3>성장 포인트</h3>
           </div>
           <div class="comment-scroll">
             ${list(student.insights.needs, student)}
@@ -1073,7 +1073,7 @@ function renderPageTwo(student) {
               <div class="memo-tags" aria-label="피드백 태그">
                 ${chip("#면접검토")}
                 ${chip("#추가 포트폴리오 요청")}
-                ${chip("#보완 후 재검토")}
+                ${chip("#추가 검토")}
               </div>
             </div>
             <textarea aria-label="${esc(student.name)} 종합 피드백" placeholder="기업 담당자 의견을 입력하세요."></textarea>
