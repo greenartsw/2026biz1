@@ -143,7 +143,9 @@ function getCompletedFeedbackPayload_() {
     recordsByStudent[key] = {
       student: record.student || "",
       maskedName: record.maskedName || "",
-      submittedAt: record.submittedAt || ""
+      submittedAt: record.submittedAt || "",
+      feedback: record.feedback || "",
+      ratings: feedbackRatings_(record)
     };
   });
 
@@ -166,6 +168,28 @@ function rowToRecord_(headers, row) {
   record.submittedAt = firstValue_(record, ["submittedAt", "저장일시", "타임스탬프", "Timestamp"]);
   record.feedback = firstValue_(record, ["feedback", "기업담당자의견", "기업 담당자 의견", "종합 피드백", "멘토링"]);
   return record;
+}
+
+function feedbackRatings_(record) {
+  const ratings = {};
+  FEEDBACK_ITEMS.forEach((item) => {
+    const value = record[item];
+    ratings[item] = value === undefined || value === null ? "" : String(value);
+  });
+
+  const ratingsJson = firstValue_(record, ["ratings", "평가"]);
+  if (!ratingsJson) return ratings;
+
+  try {
+    const parsed = typeof ratingsJson === "string" ? JSON.parse(ratingsJson) : ratingsJson;
+    FEEDBACK_ITEMS.forEach((item) => {
+      if (!ratings[item] && parsed[item] !== undefined && parsed[item] !== null) {
+        ratings[item] = String(parsed[item]);
+      }
+    });
+  } catch (error) {}
+
+  return ratings;
 }
 
 function isCompletedFeedbackRecord_(record) {

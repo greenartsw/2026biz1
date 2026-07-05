@@ -505,12 +505,19 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--teal); }
 .rating-row strong { color: var(--ink); font-size: 14px; }
 .rating-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
 .rating-options label { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 30px; border: 1px solid var(--line); border-radius: 0; background: var(--panel); color: var(--navy); font-weight: 900; }
+.enterprise-form.is-mentoring-complete .rating-row { background: #f3f4f6; border-color: #d1d5db; }
+.enterprise-form.is-mentoring-complete .rating-row strong,
+.enterprise-form.is-mentoring-complete .rating-options label { color: #6b7280; }
+.enterprise-form.is-mentoring-complete .rating-options label { background: #f9fafb; border-color: #d1d5db; }
+.enterprise-form.is-mentoring-complete .rating-options input:checked + span { color: #374151; }
+.enterprise-form.is-mentoring-complete .rating-options input:disabled { cursor: not-allowed; opacity: 0.72; }
 .feedback-lines { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; margin-top: 0; height: 100%; min-height: 0; }
 .feedback-lines-head { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; min-width: 0; padding: 10px 11px; border: 1px solid var(--soft-line); border-left: 6px solid var(--blue); background: var(--panel-soft); }
 .feedback-title-copy { display: grid; gap: 2px; min-width: 76px; }
 .feedback-title-copy span { color: var(--muted); font-size: 11px; font-weight: 900; }
 .feedback-lines strong { color: var(--navy); font-size: 16px; line-height: 1.1; }
 textarea { width: 100%; min-height: 76px; resize: vertical; border: 1px solid var(--line); border-radius: 0; padding: 11px; background: var(--panel); color: var(--ink); line-height: 1.45; }
+textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; cursor: not-allowed; opacity: 1; }
 .feedback-lines textarea { flex: 1 1 auto; min-height: 0; height: 100%; resize: none; }
 .memo-panel { display: block; min-height: 0; }
 .memo-tags { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 5px; min-width: 0; }

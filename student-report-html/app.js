@@ -16,6 +16,7 @@ const themeSelect = document.getElementById("themeSelect") || controlFallback("w
 const viewSelect = document.getElementById("viewSelect") || controlFallback("all");
 const captureMode = document.getElementById("captureMode") || controlFallback("캡처 모드");
 const completedFeedbackStudents = new Set();
+const completedFeedbackRecords = new Map();
 let completedFeedbackLoading = null;
 let completedFeedbackLoaded = false;
 
@@ -325,6 +326,12 @@ function metric(label, value, meta, tone = "blue") {
   `;
 }
 
+function collaborationBreakdown(student) {
+  return [student.peer, student.selfEval, student.instructorEval]
+    .map((value) => isMissing(value) ? "-" : String(Math.round(Number(value))))
+    .join(" / ");
+}
+
 function bar(label, value, max = 100) {
   const width = isMissing(value) ? 0 : Math.max(0, Math.min(100, (Number(value) / max) * 100));
   return `
@@ -362,6 +369,14 @@ function teamAggregateOpinion(student) {
   if (student && student.team && student.team.teamOpinion) return student.team.teamOpinion;
   return "팀 산출물의 완성도, 협업 과정, 기업 공유 전 보완 방향을 종합해 확인합니다.";
 }
+
+function combinedTeacherOpinion(student) {
+  const personal = projectAlignedText(student.teacherOpinion || student.insights.teacher, student);
+  const team = projectAlignedText(teamAggregateOpinion(student), student);
+  const unit = cfg.project1UnitSummaryOpinion || "";
+  return [personal, team, unit].filter(Boolean).join(" ");
+}
+
 function radarAxes(student) {
   return [
     { label: "사전진단", value: student.diagnostic },
@@ -409,12 +424,12 @@ function radarChart(student) {
     return radarPoint(index, axes.length, maxRadius * value / 100, center);
   });
   const dots = dataPoints.map((point) => '<circle class="radar-dot" cx="' + one(point.x) + '" cy="' + one(point.y) + '" r="4.6"></circle>').join("");
-  const status = student.status === "중탈" ? "중탈 학생은 개별 통계 참고용" : "6개 역량 100점 환산";
+  const status = student.status === "중탈" ? "중탈 학생은 개별 통계 참고용" : "6개 성과 지표 100점 환산";
 
   return [
     '<div class="radar-card">',
-      '<div class="radar-head"><strong>역량 6개 레이더</strong><span>' + esc(status) + '</span></div>',
-      '<svg class="radar-svg" viewBox="0 0 320 320" role="img" aria-label="' + esc(student.name) + ' 역량 6개 레이더 차트">',
+      '<div class="radar-head"><strong>성과 지표 6개 레이더</strong><span>' + esc(status) + '</span></div>',
+      '<svg class="radar-svg" viewBox="0 0 320 320" role="img" aria-label="' + esc(student.name) + ' 성과 지표 6개 레이더 차트">',
         grid,
         spokes,
         '<polygon class="radar-area" points="' + pointsAttr(dataPoints) + '"></polygon>',
@@ -502,7 +517,7 @@ function renderPageOne(student) {
           <ul class="team-list">${teamMembers(student)}</ul>
           <div class="team-stats">
             ${metric("프로젝트 참여도", scoreLabel(student.project), student.grade, student.project >= 91 ? "teal" : student.project >= 86 ? "blue" : "amber")}
-            ${metric("협업 평균", scoreLabel(avgScore([student.peer, student.selfEval, student.instructorEval])), "동료·자기·교수", "teal")}
+            ${metric("협업 세부", collaborationBreakdown(student), "동료 / 자기 / 교수", "teal")}
           </div>
           <div class="teacher-box">
             <span>지도교수</span>
@@ -590,13 +605,68 @@ function addCompletedFeedbackStudent(value) {
   if (key) completedFeedbackStudents.add(key);
 }
 
+function addCompletedFeedbackRecord(record) {
+  if (!record) return;
+  [record.student, record.maskedName].filter(Boolean).forEach((value) => {
+    const key = normalizeFeedbackKey(value);
+    if (!key) return;
+    completedFeedbackStudents.add(key);
+    completedFeedbackRecords.set(key, record);
+  });
+}
+
+function completedFeedbackRecord(student) {
+  for (const key of feedbackStudentKeys(student)) {
+    const record = completedFeedbackRecords.get(key);
+    if (record) return record;
+  }
+  return null;
+}
+
+function feedbackTextarea(form) {
+  const page = form && form.closest ? form.closest(".report-page") : null;
+  return ((page || form).querySelector(".feedback-lines textarea") || null);
+}
+
+function applyCompletedFeedbackValues(form, record) {
+  if (!record) return;
+  const ratings = record.ratings || {};
+  const rows = [...form.querySelectorAll(".rating-row")];
+  cfg.feedbackItems.forEach((item, index) => {
+    const value = String(ratings[item] || "");
+    if (!value || !rows[index]) return;
+    rows[index].querySelectorAll("input[type='checkbox']").forEach((input) => {
+      input.checked = input.value === value;
+    });
+  });
+
+  const textarea = feedbackTextarea(form);
+  if (textarea && record.feedback !== undefined && record.feedback !== null) {
+    textarea.value = record.feedback;
+  }
+}
+
+function setCompletedFeedbackControls(form, completed) {
+  form.querySelectorAll(".rating-options input[type='checkbox']").forEach((input) => {
+    input.disabled = completed;
+  });
+  const textarea = feedbackTextarea(form);
+  if (textarea) textarea.disabled = completed;
+  const page = form && form.closest ? form.closest(".report-page") : null;
+  if (page) page.classList.toggle("is-mentoring-complete", completed);
+}
+
 function applyCompletedButtonState(form, student) {
   const button = form.querySelector(".feedback-submit");
   if (!button) return;
-  const completed = isFeedbackCompleted(student);
+  const record = completedFeedbackRecord(student);
+  const completed = Boolean(record) || isFeedbackCompleted(student);
+  if (record) applyCompletedFeedbackValues(form, record);
   form.classList.toggle("is-mentoring-complete", completed);
+  setCompletedFeedbackControls(form, completed);
   button.disabled = completed;
   button.textContent = completed ? "멘토링 완료" : "훈련생 피드백 저장";
+  if (record) setFeedbackStatus(form, "시트에 저장된 피드백이 반영되었습니다.", "success");
 }
 
 function applyCompletedButtonStates() {
@@ -635,12 +705,10 @@ function loadCompletedFeedback(force = false) {
     window[callbackName] = (data) => {
       window.clearTimeout(timer);
       completedFeedbackStudents.clear();
+      completedFeedbackRecords.clear();
       ((data && data.completedStudents) || []).forEach(addCompletedFeedbackStudent);
       ((data && data.completedMaskedNames) || []).forEach(addCompletedFeedbackStudent);
-      ((data && data.records) || []).forEach((record) => {
-        addCompletedFeedbackStudent(record.student);
-        addCompletedFeedbackStudent(record.maskedName);
-      });
+      ((data && data.records) || []).forEach(addCompletedFeedbackRecord);
       completedFeedbackLoaded = true;
       applyCompletedButtonStates();
       cleanup();
@@ -974,7 +1042,7 @@ function renderPageTwo(student) {
             <h3>교수자 의견</h3>
           </div>
           <div class="comment-scroll">
-            <p>${esc(projectAlignedText(student.teacherOpinion || student.insights.teacher, student))}</p>
+            <p>${esc(combinedTeacherOpinion(student))}</p>
           </div>
         </section>
       </div>
