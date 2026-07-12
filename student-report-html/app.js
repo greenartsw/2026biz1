@@ -1172,7 +1172,11 @@ function selectedStudent() {
 
 function updateUrl() {
   const url = new URL(location.href);
-  url.searchParams.set("student", studentRouteName(selectedStudent()));
+  if (["summary", "all", "cover"].includes(viewSelect.value)) {
+    url.searchParams.delete("student");
+  } else {
+    url.searchParams.set("student", studentRouteName(selectedStudent()));
+  }
   url.searchParams.set("view", viewSelect.value);
   history.replaceState(null, "", url);
 }
@@ -1263,3 +1267,4 @@ function initControls() {
 initControls();
 render();
 loadCompletedFeedback();
+
