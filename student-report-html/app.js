@@ -15,12 +15,32 @@ const studentSelect = document.getElementById("studentSelect") || controlFallbac
 const themeSelect = document.getElementById("themeSelect") || controlFallback("white");
 const viewSelect = document.getElementById("viewSelect") || controlFallback("all");
 const captureMode = document.getElementById("captureMode") || controlFallback("캡처 모드");
+const adminDock = document.getElementById("adminDock");
+const adminDashboardFrame = document.getElementById("adminDashboardFrame");
+const adminDockToggle = document.getElementById("adminDockToggle");
 const completedFeedbackStudents = new Set();
 const completedFeedbackRecords = new Map();
 let completedCoverSelection = { completed: false, teams: [], records: [] };
 let completedFeedbackLoading = null;
 let completedFeedbackLoaded = false;
 
+function initAdminDock() {
+  const params = new URLSearchParams(location.search);
+  const enabled = ["1", "true", "yes", "admin"].includes(String(params.get("admin") || "").toLowerCase());
+  if (!adminDock || !enabled) return;
+  adminDock.hidden = false;
+  document.body.classList.add("admin-mode");
+  if (adminDashboardFrame && adminDashboardFrame.dataset.src && !adminDashboardFrame.src) {
+    adminDashboardFrame.src = adminDashboardFrame.dataset.src;
+  }
+  if (adminDockToggle) {
+    adminDockToggle.addEventListener("click", () => {
+      const collapsed = adminDock.classList.toggle("is-collapsed");
+      adminDockToggle.textContent = collapsed ? "펼치기" : "접기";
+      adminDockToggle.setAttribute("aria-expanded", String(!collapsed));
+    });
+  }
+}
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -1264,7 +1284,9 @@ function initControls() {
   });
 }
 
+initAdminDock();
 initControls();
 render();
 loadCompletedFeedback();
+
 

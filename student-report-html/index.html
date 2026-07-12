@@ -41,8 +41,24 @@
       </div>
       -->
     </header>
+    <section id="adminDock" class="admin-dock" data-ui hidden>
+      <div class="admin-dock-head">
+        <div>
+          <strong>프로젝트1 어드민 모드</strong>
+          <span>기업 피드백 접수 확인 · 표지 선정 완료 후 학생 메일 발송</span>
+        </div>
+        <button id="adminDockToggle" type="button" aria-expanded="true">접기</button>
+      </div>
+      <iframe
+        id="adminDashboardFrame"
+        title="프로젝트1 발송 어드민"
+        data-src="https://script.google.com/macros/s/AKfycbxsga-7SclThSmp-S3TAavdJ4TWxrKVHKxterQM-9tB3QMPaHEVyI7Ja3d1pI4gzsCXdQ/exec"
+        loading="lazy"
+      ></iframe>
+    </section>
     <main id="reportDeck" class="deck" aria-live="polite"></main>
     <script src="./data.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>
+

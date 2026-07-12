@@ -966,3 +966,46 @@ body.capture .report-page { width: 100vw; border-radius: 0; box-shadow: none; }
   color: #6b7280;
   border-color: #d1d5db;
 }
+
+.admin-dock {
+  width: 100%;
+  background: #f8fbff;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 22px 16px;
+}
+.admin-dock[hidden] { display: none; }
+.admin-dock-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1600px;
+  margin: 0 auto 10px;
+}
+.admin-dock-head div { display: grid; gap: 3px; min-width: 0; }
+.admin-dock-head strong { color: var(--navy); font-size: 16px; }
+.admin-dock-head span { color: var(--muted); font-size: 12px; }
+.admin-dock-head button {
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 800;
+}
+.admin-dock iframe {
+  display: block;
+  width: min(1600px, calc(100vw - 44px));
+  height: 360px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.admin-dock.is-collapsed { padding-bottom: 10px; }
+.admin-dock.is-collapsed iframe { display: none; }
+body.theme-dark .admin-dock { background: #111b2d; }
+body.admin-mode .deck { padding-top: 28px; }
+
