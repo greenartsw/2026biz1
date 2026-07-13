@@ -872,8 +872,19 @@ function selectedCoverForTeam(form, team) {
   return candidates.find((candidate) => candidate.id === checked.value) || { id: checked.value, label: checked.value };
 }
 
+function coverReviewTeamParam() {
+  const params = new URLSearchParams(location.search);
+  return params.get("coverTeam") || params.get("team") || "";
+}
+
+function coverReviewTeams() {
+  const requested = coverReviewTeamParam();
+  if (!requested) return cfg.teams || [];
+  const matched = (cfg.teams || []).find((team) => String(team.id) === String(requested));
+  return matched ? [matched] : (cfg.teams || []);
+}
 function validateCoverSelectionForm(form) {
-  const teams = cfg.teams || [];
+  const teams = coverReviewTeams();
   const missingSelectionTeams = teams.filter((team) => !selectedCoverForTeam(form, team));
   const missingReasonTeams = teams.filter((team) => {
     const reason = form.querySelector(`textarea[name="${coverFieldName(team, "reason")}"]`);
@@ -1084,9 +1095,11 @@ function renderCoverSelectionTeam(team) {
 }
 
 function renderCoverSelectionPage() {
+  const isReviewMode = Boolean(coverReviewTeamParam());
+  const teams = coverReviewTeams();
   return `
     <section class="report-page cover-selection-page" data-page="cover-selection">
-      <form class="cover-selection-form">
+      <form class="cover-selection-form ${isReviewMode ? "cover-review-mode" : ""}">
         <header class="cover-selection-header">
           <div>
             <p class="eyebrow">기업 회신용</p>
@@ -1098,7 +1111,7 @@ function renderCoverSelectionPage() {
           </div>
         </header>
         <div class="cover-selection-grid">
-          ${(cfg.teams || []).map((team) => renderCoverSelectionTeam(team)).join("")}
+          ${teams.map((team) => renderCoverSelectionTeam(team)).join("")}
         </div>
       </form>
       <footer class="page-footer">그린컴퓨터아카데미 수원 · (주)더페이퍼</footer>
@@ -1288,5 +1301,6 @@ initAdminDock();
 initControls();
 render();
 loadCompletedFeedback();
+
 
 

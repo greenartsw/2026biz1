@@ -1049,3 +1049,79 @@ body.capture .report-page { width: 100vw; border-radius: 0; box-shadow: none; }
 body.theme-dark .admin-dock { background: #111b2d; }
 body.admin-mode .deck { padding-top: 28px; }
 
+.cover-selection-form.cover-review-mode.is-cover-complete {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-selection-grid {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 980px;
+  margin: 0 auto;
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-team-card,
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-team-card.wide {
+  min-height: 0;
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-team-body {
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.55fr);
+  align-items: stretch;
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-options,
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-team-card:not(.wide) .cover-options,
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-team-card.wide .cover-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  gap: 0;
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-option:not(:has(input:checked)) {
+  display: none;
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-option:has(input:checked) {
+  opacity: 1;
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-option:has(input:checked) .cover-option-check {
+  display: none;
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-option:has(input:checked) .cover-thumb {
+  min-height: 440px;
+  border-color: rgba(180, 35, 24, 0.2);
+  box-shadow: inset 0 0 0 2px rgba(180, 35, 24, 0.12), 0 12px 28px rgba(15,23,42,0.16);
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-option:has(input:checked) .cover-thumb::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 78%;
+  height: 72%;
+  border: 10px solid #d92d20;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(-7deg);
+  pointer-events: none;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.25) inset;
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-option:has(input:checked) .cover-thumb-label {
+  background: #b42318;
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-reason {
+  background: #f8fbff;
+  border-left: 5px solid var(--blue);
+  padding: 16px;
+}
+.cover-selection-form.cover-review-mode.is-cover-complete .cover-reason textarea:disabled {
+  min-height: 300px;
+  background: #fff;
+  color: var(--ink);
+  border-color: #d7e3f4;
+  font-size: 15px;
+  line-height: 1.7;
+}
+@media (max-width: 900px) {
+  .cover-selection-form.cover-review-mode.is-cover-complete .cover-team-body {
+    grid-template-columns: 1fr;
+  }
+  .cover-selection-form.cover-review-mode.is-cover-complete .cover-option:has(input:checked) .cover-thumb {
+    min-height: 320px;
+  }
+}
