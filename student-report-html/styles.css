@@ -1010,6 +1010,21 @@ body.capture .report-page { width: 100vw; border-radius: 0; box-shadow: none; }
 .admin-dock-head div { display: grid; gap: 3px; min-width: 0; }
 .admin-dock-head strong { color: var(--navy); font-size: 16px; }
 .admin-dock-head span { color: var(--muted); font-size: 12px; }
+.admin-dock-actions { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.admin-dock-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border: 1px solid var(--blue);
+  border-radius: 6px;
+  background: var(--blue);
+  color: #fff;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
 .admin-dock-head button {
   height: 32px;
   border: 1px solid var(--line);
