@@ -423,8 +423,9 @@ function ensureHeaders_(sheet, expectedHeaders) {
 
   const current = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
   const next = current.slice();
+  const currentKeys = current.map(normalizeKey_);
   headers.forEach((header) => {
-    if (!next.includes(header)) next.push(header);
+    if (!currentKeys.includes(normalizeKey_(header))) next.push(header);
   });
 
   if (next.length !== current.length) {
@@ -436,7 +437,8 @@ function appendFeedback_(sheet, payload) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   const ratings = payload.ratings || {};
   const row = headers.map((header) => {
-    if (FEEDBACK_ITEMS.includes(header)) return ratings[header] || "";
+    const ratingItem = FEEDBACK_ITEMS.find((item) => normalizeKey_(item) === normalizeKey_(header));
+    if (ratingItem) return firstValue_(ratings, [ratingItem]);
     return valueForHeader_(payload, header);
   });
   sheet.appendRow(row);
@@ -593,7 +595,7 @@ function rowToRecord_(headers, row) {
 function feedbackRatings_(record) {
   const ratings = {};
   FEEDBACK_ITEMS.forEach((item) => {
-    const value = record[item];
+    const value = firstValue_(record, [item]);
     ratings[item] = value === undefined || value === null ? "" : String(value);
   });
 
@@ -616,7 +618,7 @@ function isCompletedFeedbackRecord_(record) {
   if (!String(record.student || record.maskedName || "").trim()) return false;
   if (!String(record.feedback || "").trim()) return false;
 
-  const ratings = FEEDBACK_ITEMS.map((item) => String(record[item] || "").trim());
+  const ratings = FEEDBACK_ITEMS.map((item) => String(firstValue_(record, [item]) || "").trim());
   if (ratings.every(Boolean)) return true;
 
   const ratingsJson = firstValue_(record, ["ratings", "평가"]);
@@ -632,6 +634,14 @@ function isCompletedFeedbackRecord_(record) {
 function firstValue_(record, keys) {
   for (let i = 0; i < keys.length; i += 1) {
     const value = record[keys[i]];
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  const recordKeys = Object.keys(record || {});
+  for (let i = 0; i < keys.length; i += 1) {
+    const wanted = normalizeKey_(keys[i]);
+    const matchedKey = recordKeys.find((key) => normalizeKey_(key) === wanted);
+    if (!matchedKey) continue;
+    const value = record[matchedKey];
     if (value !== undefined && value !== null && String(value).trim() !== "") return value;
   }
   return "";
