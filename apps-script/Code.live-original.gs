@@ -77,7 +77,6 @@ const HEADERS = [
 ];
 
 const COVER_SHEET_NAME = "표지 선정";
-const EXPECTED_COVER_TEAMS = ["팀1", "팀2", "팀3"];
 const COVER_HEADERS = [
   "제출시각",
   "응답유형",
@@ -191,7 +190,7 @@ function releaseStudentTest(rowNumber) {
 }
 
 function releaseStudent_(rowNumber, testOnly) {
-  const lock = LockService.getScriptLock();
+  const lock = LockService.getDocumentLock();
   if (!lock.tryLock(30000)) {
     throw new Error('다른 발송 작업이 진행 중입니다. 잠시 후 다시 시도하세요.');
   }
@@ -368,45 +367,34 @@ function ratingSummaryHtml_(item) {
   return `<div class="rating-list">${rows}</div>`;
 }
 function doPost(e) {
-  try {
-    const payload = parsePayload_(e);
+  const payload = parsePayload_(e);
 
-    if (payload.responseType === "팀표지선정") {
-      if (!payload.selections || !Object.keys(payload.selections).length) {
-        throw new Error("표지 선정 결과가 없습니다.");
-      }
-      const coverSheet = getCoverSelectionSheet_();
-      ensureHeaders_(coverSheet, COVER_HEADERS);
-      const result = appendCoverSelection_(coverSheet, payload);
-      return jsonOutput_({ ok: true, saved: true, type: "coverSelection", sheetName: COVER_SHEET_NAME, rowNumber: result.rowNumber, rowsSaved: result.rowsSaved });
-    }
+  if (payload.responseType === "팀표지선정") {
+    const coverSheet = getCoverSelectionSheet_();
+    ensureHeaders_(coverSheet, COVER_HEADERS);
+    const result = appendCoverSelection_(coverSheet, payload);
 
-    if (!norm_(payload.student || payload.maskedName)) throw new Error("훈련생 정보가 없습니다.");
-    if (!norm_(payload.company)) throw new Error("기업 정보가 없습니다.");
-
-    const sheet = getFeedbackSheet_();
-    ensureHeaders_(sheet);
-    const rowNumber = appendFeedback_(sheet, payload);
-    return jsonOutput_({ ok: true, saved: true, type: "studentFeedback", sheetName: CONFIG.feedbackSheetName, rowNumber, rowsSaved: 1 });
-  } catch (error) {
-    return jsonOutput_({ ok: false, saved: false, error: summarizeError_(error) });
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: true, saved: true, type: "coverSelection", rowNumber: result.rowNumber, rowsSaved: result.rowsSaved }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
+
+  const sheet = getFeedbackSheet_();
+  ensureHeaders_(sheet);
+  const rowNumber = appendFeedback_(sheet, payload);
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true, saved: true, rowNumber }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function parsePayload_(e) {
-  const raw = e && e.postData && e.postData.contents ? e.postData.contents : "";
-  if (!raw) throw new Error("요청 본문이 없습니다.");
+  const raw = e && e.postData && e.postData.contents ? e.postData.contents : "{}";
   try {
     return JSON.parse(raw);
   } catch (error) {
-    throw new Error("JSON 요청 형식이 올바르지 않습니다.");
+    return {};
   }
-}
-
-function jsonOutput_(payload) {
-  return ContentService
-    .createTextOutput(JSON.stringify(payload))
-    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function getCoverSelectionSheet_() {
@@ -573,9 +561,7 @@ function getCoverSelectionStatus_() {
     };
   }).filter((record) => String(record.team || "").trim());
   const teams = Array.from(new Set(records.map((record) => String(record.team || "").trim()).filter(Boolean)));
-  const normalizedTeams = teams.map(normalizeKey_);
-  const completed = EXPECTED_COVER_TEAMS.every((team) => normalizedTeams.includes(normalizeKey_(team)));
-  return { completed, teams, records };
+  return { completed: teams.length > 0, teams, records };
 }
 
 function rowToRecord_(headers, row) {
@@ -728,17 +714,8 @@ function ensureReleaseColumns_(sheet) {
   }
   const range = sheet.getRange(1, CONFIG.feedbackColumns.releaseStatus, 1, 6);
   const headers = range.getDisplayValues()[0];
-  const expected = ['학생발송상태', '학생발송시각', '학생발송수신자', '학생발송오류', '학생접근토큰', '토큰생성시각'];
-  const next = headers.slice();
-  let changed = false;
-  expected.forEach((header, index) => {
-    if (!norm_(next[index])) {
-      next[index] = header;
-      changed = true;
-    }
-  });
-  if (changed) {
-    range.setValues([next]);
+  if (!norm_(headers[0])) {
+    range.setValues([['학생발송상태', '학생발송시각', '학생발송수신자', '학생발송오류', '학생접근토큰', '토큰생성시각']]);
   }
 }
 
@@ -897,7 +874,8 @@ function buildSecureStudentHtml_(token, params) {
 
 function buildStudentReportFrameHtml_(item, params) {
   const view = norm_(params && params.view);
-  const baseUrl = view === 'cover' ? buildCoverReviewReportUrl_(item.team) : (item.studentReportUrl || buildStudentReportUrl_(item.maskedName || item.trainee));
+  const coverTeam = norm_(params && params.coverTeam);
+  const baseUrl = view === 'cover' ? buildCoverReviewReportUrl_(coverTeam || item.team) : (item.studentReportUrl || buildStudentReportUrl_(item.maskedName || item.trainee));
   const reportUrl = withFeedbackEndpoint_(baseUrl);
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${html_(item.trainee)} 피드백/멘토링 결과</title><style>
 html,body{margin:0;width:100%;height:100%;background:#dce6f2;overflow:hidden}.student-frame{display:block;width:100%;height:100vh;border:0;background:#fff}
@@ -975,3 +953,42 @@ function summarizeError_(error) {
   const message = error && error.message ? error.message : String(error);
   return message.slice(0, 400);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

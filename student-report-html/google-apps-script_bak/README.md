@@ -1,6 +1,8 @@
 # 훈련생 피드백 Google Apps Script 배포
 
-이 폴더의 `feedback-webapp.gs`는 `apps-script/Code.gs`와 동일한 배포용 백업본입니다.
+이 폴더의 `feedback-webapp.gs`는 `apps-script/Code.gs`와 동일한 통합 배포본입니다. 학생별 토큰 접근, 관리자 발송 화면, 완료 상태 조회, 학생 피드백 저장, 팀 표지 저장을 모두 포함합니다.
+
+운영 서버에서 회수한 수정 전 원본은 `apps-script/Code.live-original.gs`에 보존합니다.
 
 ## 적용 방법
 
@@ -25,5 +27,6 @@
 ## 주의
 
 - `feedback-webapp.gs`와 `apps-script/Code.gs` 중 한쪽을 수정했다면 다른 쪽도 같은 내용으로 맞춥니다.
+- `apps-script/Code.live-original.gs`는 운영 원본 보존용이므로 직접 배포하지 않습니다.
 - 실제 배포 전에 Apps Script의 `testDoGetCompleted()`와 `testDoPostCoverSelection()`을 실행해 권한과 시트 연결을 확인합니다.
 - 테스트 저장으로 추가된 행은 확인 후 스프레드시트에서 정리합니다.
