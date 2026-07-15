@@ -16,7 +16,7 @@
 
 ## 작업 시작 절차
 
-1. `.agents/skills/sync-project-backup/SKILL.md`를 읽는다.
+1. `docs/NEXT_SESSION.md`와 `.agents/skills/sync-project-backup/SKILL.md`를 읽는다.
 2. `git status -sb`, `git remote -v`, 현재 브랜치를 확인한다.
 3. `git fetch origin --prune`으로 원격 상태를 갱신한다.
 4. 로컬 변경이 없고 `main`이 원격보다 뒤처졌으면 fast-forward 방식으로만 갱신한다.
@@ -36,3 +36,4 @@
 
 - `C:\Users\USER\Downloads\2026biz1-main`은 ZIP 추출본이며 Git 저장소가 아니다. 참고나 비교 용도로만 사용한다.
 - 실제 작업과 백업은 이 `2026biz1` Git 저장소에서만 수행한다.
+- 프로젝트2는 프로젝트1 운영본을 직접 덮어쓰지 않고 별도 브랜치 또는 하위 폴더에서 재사용한다.
