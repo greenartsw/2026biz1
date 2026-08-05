@@ -721,6 +721,12 @@ function loadCompletedFeedback(force = false) {
 
     window[callbackName] = (data) => {
       window.clearTimeout(timer);
+      if (data && data.ok === false) {
+        if (window.console && console.warn) console.warn('완료 상태 조회 실패:', data.error || 'unknown error');
+        cleanup();
+        resolve(false);
+        return;
+      }
       completedFeedbackStudents.clear();
       completedFeedbackRecords.clear();
       ((data && data.completedStudents) || []).forEach(addCompletedFeedbackStudent);

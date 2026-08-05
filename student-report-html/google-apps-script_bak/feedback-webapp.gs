@@ -76,7 +76,8 @@ const HEADERS = [
   "페이지URL"
 ];
 
-const COVER_SHEET_NAME = "표지 선정";
+const COVER_SHEET_NAME = "[기업회신]표지 선정";
+const COVER_SHEET_ALIASES = ["표지 선정"];
 const EXPECTED_COVER_TEAMS = ["팀1", "팀2", "팀3"];
 const COVER_HEADERS = [
   "제출시각",
@@ -100,7 +101,7 @@ function doGet(e) {
   const callback = String(params.callback || '');
 
   if (action === 'completed') {
-    const payload = getCompletedFeedbackPayload_();
+    const payload = safeCompletedFeedbackPayload_();
     if (callback) {
       return ContentService
         .createTextOutput(callback + '(' + JSON.stringify(payload) + ');')
@@ -378,7 +379,7 @@ function doPost(e) {
       const coverSheet = getCoverSelectionSheet_();
       ensureHeaders_(coverSheet, COVER_HEADERS);
       const result = appendCoverSelection_(coverSheet, payload);
-      return jsonOutput_({ ok: true, saved: true, type: "coverSelection", sheetName: COVER_SHEET_NAME, rowNumber: result.rowNumber, rowsSaved: result.rowsSaved });
+      return jsonOutput_({ ok: true, saved: true, type: "coverSelection", sheetName: coverSheet.getName(), rowNumber: result.rowNumber, rowsSaved: result.rowsSaved });
     }
 
     if (!norm_(payload.student || payload.maskedName)) throw new Error("훈련생 정보가 없습니다.");
@@ -411,7 +412,16 @@ function jsonOutput_(payload) {
 
 function getCoverSelectionSheet_() {
   const spreadsheet = SpreadsheetApp.openById(CONFIG.feedbackSpreadsheetId);
-  return spreadsheet.getSheetByName(COVER_SHEET_NAME) || spreadsheet.insertSheet(COVER_SHEET_NAME);
+  return findCoverSelectionSheet_(spreadsheet) || spreadsheet.insertSheet(COVER_SHEET_NAME);
+}
+
+function findCoverSelectionSheet_(spreadsheet) {
+  const names = [COVER_SHEET_NAME, ...COVER_SHEET_ALIASES];
+  for (let index = 0; index < names.length; index += 1) {
+    const sheet = spreadsheet.getSheetByName(names[index]);
+    if (sheet) return sheet;
+  }
+  return null;
 }
 
 function ensureHeaders_(sheet, expectedHeaders) {
@@ -513,10 +523,26 @@ function valueForCoverHeader_(payload, team, selection, header) {
   return values[header] !== undefined ? values[header] : "";
 }
 
+function safeCompletedFeedbackPayload_() {
+  try {
+    return getCompletedFeedbackPayload_();
+  } catch (error) {
+    return {
+      ok: false,
+      error: summarizeError_(error),
+      completedStudents: [],
+      completedMaskedNames: [],
+      records: [],
+      coverSelection: { completed: false, teams: [], records: [] },
+      coverSelectionCompleted: false
+    };
+  }
+}
+
 function getCompletedFeedbackPayload_() {
-  const coverSelection = getCoverSelectionStatus_();
   const sheet = getFeedbackSheet_();
   ensureHeaders_(sheet);
+  const coverSelection = getCoverSelectionStatus_();
 
   const values = sheet.getDataRange().getValues();
   if (values.length < 2) {
@@ -553,7 +579,7 @@ function getCompletedFeedbackPayload_() {
 
 function getCoverSelectionStatus_() {
   const spreadsheet = SpreadsheetApp.openById(CONFIG.feedbackSpreadsheetId);
-  const sheet = spreadsheet.getSheetByName(COVER_SHEET_NAME);
+  const sheet = findCoverSelectionSheet_(spreadsheet);
   if (!sheet || sheet.getLastRow() < 2) return { completed: false, teams: [], records: [] };
 
   ensureHeaders_(sheet, COVER_HEADERS);
