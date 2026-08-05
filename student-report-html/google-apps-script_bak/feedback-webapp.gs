@@ -7,7 +7,8 @@ const CONFIG = {
   rosterSpreadsheetId: '1KQtB9bGa6iBzFu-N1843eAB5z9B-j1yk1a_MOEu9Cp8',
   rosterSheetName: '프로젝트1',
   scoreSpreadsheetId: '1KrOHVkR38Ms6IQkNkTxFTjkIo9v7jkAKNGE-OfxjF8w',
-  scoreSheetName: '기업맞춤-1차 평가결과',
+  scoreSheetName: '프로젝트1 평가결과',
+  scoreSheetAliases: ['기업맞춤-1차 평가결과'],
   reportBaseUrl: 'https://greenartsw.github.io/2026biz1/student-report-html/index.html',
   courseName: '[기맞1차]출판&광고',
   projectName: '프로젝트1',
@@ -753,9 +754,13 @@ function getRosterSheet_() {
 }
 
 function getScoreSheet_() {
-  const sheet = SpreadsheetApp.openById(CONFIG.scoreSpreadsheetId).getSheetByName(CONFIG.scoreSheetName);
-  if (!sheet) throw new Error(`성적종합 시트를 찾을 수 없습니다: ${CONFIG.scoreSheetName}`);
-  return sheet;
+  const spreadsheet = SpreadsheetApp.openById(CONFIG.scoreSpreadsheetId);
+  const names = [CONFIG.scoreSheetName].concat(CONFIG.scoreSheetAliases || []);
+  for (let index = 0; index < names.length; index += 1) {
+    const sheet = spreadsheet.getSheetByName(names[index]);
+    if (sheet) return sheet;
+  }
+  throw new Error(`성적종합 시트를 찾을 수 없습니다: ${names.join(", ")}`);
 }
 
 function ensureReleaseColumns_(sheet) {
