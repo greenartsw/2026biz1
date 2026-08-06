@@ -10,6 +10,7 @@ window.REPORT_CONFIG = {
   "reportTitle": "개인별 훈련생 성과 리포트",
   "feedbackSheetUrl": "https://docs.google.com/spreadsheets/d/1mgA6LT6-Ny1a4xKM3xnmVcgIRo2DwajuDtsgNNo3MxY/edit",
   "feedbackEndpoint": "",
+  "adminEndpoint": "",
   "missingScoreLabel": "미응시",
   "scoreSource": {
     "spreadsheetId": "1KrOHVkR38Ms6IQkNkTxFTjkIo9v7jkAKNGE-OfxjF8w",

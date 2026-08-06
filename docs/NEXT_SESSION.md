@@ -15,7 +15,7 @@
 - 프로젝트2 실제 점수는 `프로젝트2 평가결과` 탭 기준으로 `data-project2-oorum.js`에 반영됨
 - 프로젝트2 전용 Apps Script 배포 원본은 `apps-script/Code.project2-oorum.gs`에 준비됨
 - 프로젝트2 Apps Script 관리자 화면에서는 표지선정 완료 조건 없이 개인별 피드백 발송을 관리하도록 수정됨
-- 프로젝트2 Apps Script 웹앱 URL은 아직 연결 전이며, 배포 후 `data-project2-oorum.js`의 `feedbackEndpoint`에 반영해야 함
+- 프로젝트2 Apps Script 웹앱 URL은 아직 연결 전이며, 배포 후 `data-project2-oorum.js`의 `feedbackEndpoint`, `adminEndpoint`에 같은 URL을 반영해야 함
 
 ## 집에서 이어서 시작하기
 

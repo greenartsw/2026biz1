@@ -76,7 +76,7 @@
 
 - 프로젝트2 Apps Script 배포 URL은 아직 확인되지 않았다.
 - `apps-script/Code.project2-oorum.gs`를 새 Apps Script 프로젝트 또는 프로젝트2 배포본에 반영한 뒤 웹앱 URL을 발급해야 한다.
-- 발급된 URL을 `student-report-html/data-project2-oorum.js`의 `feedbackEndpoint`와 필요 시 `adminEndpoint`에 입력한다.
+- 발급된 URL을 `student-report-html/data-project2-oorum.js`의 `feedbackEndpoint`, `adminEndpoint`에 같은 값으로 입력한다.
 - 슈퍼어드민 런처는 `greenartsw/2026biz1`에도 추가했다.
   - 실제 권한·데이터 접근 통제는 Apps Script와 Google Sheets 권한 설정에 의존한다.
   - 개인 계정의 `greenartswDXPoC_V1` 슈퍼어드민과 소스 버전이 다를 수 있다.
