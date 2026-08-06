@@ -456,7 +456,9 @@ function renderSummaryPage() {
   const recommendedLine = scoredRows.slice(0, 3).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>");
   const highFitLine = highFit.slice(0, 6).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>") || "90% 이상 후보 없음";
   const statusLine = statusOnlyRows.map((student) => esc(student.maskedName) + " " + esc(summaryStatusDetail(student))).join("<br>") || "상태 특이사항 없음";
-  const focusLine = growthFocusStudents.slice(0, 4).map((student) => esc(student.maskedName) + " " + esc(student.group)).join("<br>") || "추가 관리군 없음";
+  const focusLine = Array.isArray(cfg.summaryFocusItems)
+    ? cfg.summaryFocusItems.map(esc).join("<br>")
+    : growthFocusStudents.slice(0, 4).map((student) => esc(student.maskedName) + " " + esc(student.group)).join("<br>") || "추가 관리군 없음";
 
   return [
     '<section class="report-page summary-page' + (teamSummaryVisible() ? '' : ' summary-no-team') + '" data-page="summary">',
