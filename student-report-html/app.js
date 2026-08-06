@@ -286,7 +286,45 @@ function summaryMetric(label, value, meta, tone = "blue") {
   ].join("");
 }
 
+function summaryStatusLabel(student) {
+  const status = String(student && student.status ? student.status : "").replace(/\s+/g, " ").trim();
+  if (!status) return "";
+  if (status.includes("중탈")) return "중탈";
+  if (status.includes("취업")) return "취업";
+  if (status.includes("수료")) return "수료";
+  return "";
+}
+
+function isSummaryStatusOnlyRow(student) {
+  return Boolean(summaryStatusLabel(student));
+}
+
+function summaryStatusBadge(label) {
+  return label ? '<span class="summary-status-badge">' + esc(label) + '</span>' : "";
+}
+
+function matrixStatusValue(label) {
+  return '<span class="matrix-status-value">' + esc(label) + '</span>';
+}
+
 function renderMatrixRow(student, index) {
+  const statusLabel = summaryStatusLabel(student);
+  const statusOnly = isSummaryStatusOnlyRow(student);
+  const statusBadge = summaryStatusBadge(statusLabel);
+  if (statusOnly) {
+    const teamCell = teamLabelVisible() ? '<span>' + esc(student.team.id) + '</span>' : "";
+    return [
+      '<div class="matrix-row matrix-muted matrix-status-row' + (teamLabelVisible() ? '' : ' matrix-no-team') + '">',
+        '<span class="matrix-rank matrix-rank-status">-</span>',
+        '<strong>' + esc(student.maskedName) + statusBadge + '</strong>',
+        teamCell,
+        matrixStatusValue(statusLabel),
+        matrixStatusValue(statusLabel),
+        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue(statusLabel) + '</div>',
+      '</div>'
+    ].join("");
+  }
+
   const fit = numericScore(student.fit);
   const fitTone = fit >= 93 ? "teal" : fit >= 90 ? "blue" : fit >= 85 ? "amber" : "coral";
   const width = Math.max(0, Math.min(100, fit));
@@ -294,7 +332,7 @@ function renderMatrixRow(student, index) {
   return [
     '<div class="matrix-row matrix-' + fitTone + (teamLabelVisible() ? '' : ' matrix-no-team') + '">',
       '<span class="matrix-rank">' + esc(index + 1) + '</span>',
-      '<strong>' + esc(student.maskedName) + '</strong>',
+      '<strong>' + esc(student.maskedName) + statusBadge + '</strong>',
       teamCell,
       '<span>' + esc(scoreLabel(student.final)) + '</span>',
       '<span>' + esc(scoreLabel(summaryProject1Score(student))) + '</span>',
@@ -345,14 +383,15 @@ function renderSummaryPage() {
   const attendedDays = sumFor(active, "attendedDays");
   const totalDays = sumFor(active, "totalDays");
   const attendanceRate = totalDays ? attendedDays / totalDays * 100 : null;
-  const highFit = active.filter((student) => !isMissing(student.fit) && student.fit >= 90);
-  const growthFocusStudents = active.filter((student) => student.group === "성장관리" || student.group === "참여안정" || student.final < 80 || student.fit < 85);
-  const matrix = [...active].sort((a, b) => numericScore(b.fit) - numericScore(a.fit));
-  const recommendedLine = matrix.slice(0, 3).map((student) => student.maskedName + " " + student.fit + "%").join("<br>");
-  const riskLine = [
-    ...dropouts.map((student) => student.name + " 중도탈락"),
-    ...growthFocusStudents.map((student) => student.maskedName + " " + student.group)
-  ].join(" · ") || "추가 확인 대상 없음";
+  const statusOnlyRows = students.filter(isSummaryStatusOnlyRow);
+  const scoredRows = students.filter((student) => !isSummaryStatusOnlyRow(student)).sort((a, b) => numericScore(b.fit) - numericScore(a.fit));
+  const highFit = scoredRows.filter((student) => !isMissing(student.fit) && student.fit >= 90);
+  const growthFocusStudents = scoredRows.filter((student) => student.group === "성장관리" || student.group === "참여안정" || student.final < 80 || student.fit < 85);
+  const matrix = [...scoredRows, ...statusOnlyRows];
+  const recommendedLine = scoredRows.slice(0, 3).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>");
+  const highFitLine = highFit.slice(0, 6).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>") || "90% 이상 후보 없음";
+  const statusLine = statusOnlyRows.map((student) => esc(student.maskedName) + " " + esc(summaryStatusLabel(student))).join("<br>") || "상태 특이사항 없음";
+  const focusLine = growthFocusStudents.slice(0, 4).map((student) => esc(student.maskedName) + " " + esc(student.group)).join("<br>") || "추가 관리군 없음";
 
   return [
     '<section class="report-page summary-page' + (teamSummaryVisible() ? '' : ' summary-no-team') + '" data-page="summary">',
@@ -374,7 +413,7 @@ function renderSummaryPage() {
             summaryMetric(projectScoreLabel() + " 평균", scoreLabel(project1Avg), "참여도 평균 " + one(projectAvg) + "점", project1Avg >= 90 ? "teal" : "blue"),
           '</div>',
           '<section class="summary-panel matrix-panel">',
-            '<div class="section-title"><h3>종합성과</h3><span>중탈 제외 통계 · 적합도 기준 정렬</span></div>',
+            '<div class="section-title"><h3>종합성과</h3><span>통계는 중탈 제외 · 표는 상태 표기 포함</span></div>',
             '<div class="matrix-head' + (teamLabelVisible() ? '' : ' matrix-no-team') + '"><span>순위</span><span>훈련생</span>' + (teamLabelVisible() ? '<span>팀</span>' : '') + '<span>본평가</span><span>개인 ' + esc(projectScoreLabel()) + '</span><span>채용 적합도</span></div>',
             '<div class="matrix-list">' + matrix.map(renderMatrixRow).join("") + '</div>',
           '</section>',
@@ -382,9 +421,11 @@ function renderSummaryPage() {
         '<aside class="summary-aside">',
           '<section class="summary-panel insight-panel">',
             '<div class="section-title"><h3>기업 맞춤 인재 추천</h3></div>',
-            '<div class="insight-stack">',
-              '<div><strong>' + esc(highFit.length) + '명</strong><span>채용 적합도</span><em>90% 이상</em></div>',
-              '<div class="insight-combo"><strong>3명</strong><span>채용 적합도 상위</span><b>' + recommendedLine + '</b></div>',
+            '<div class="insight-stack insight-stack-rich">',
+              '<div class="insight-card insight-card-hero"><span>채용 적합도</span><strong>' + esc(highFit.length) + '명</strong><em>90% 이상 후보군</em><b>' + highFitLine + '</b></div>',
+              '<div class="insight-card insight-card-list"><span>상위 추천</span><strong>TOP 3</strong><b>' + recommendedLine + '</b></div>',
+              '<div class="insight-card insight-card-muted"><span>상태 표기</span><strong>' + esc(statusOnlyRows.length) + '명</strong><b>' + statusLine + '</b></div>',
+              '<div class="insight-card insight-card-note"><span>검토 포인트</span><strong>' + esc(projectScoreLabel()) + '</strong><em>개인 산출물 중심</em><b>' + focusLine + '</b></div>',
             '</div>',
           '</section>',
           teamSummaryVisible() ? '<section class="summary-panel team-summary-panel"><div class="section-title"><h3>팀별 산출물</h3></div><div class="summary-teams">' + cfg.teams.map((team) => renderTeamSummary(team, active)).join("") + '</div></section>' : '',
