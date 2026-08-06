@@ -26,6 +26,16 @@ window.REPORT_CONFIG = {
     "collaborationMetrics": false,
     "coverSelection": false
   },
+  "projectMissingNames": [
+    "김예림",
+    "김혜교",
+    "문일권"
+  ],
+  "feedbackHiddenNames": [
+    "김예림",
+    "김혜교",
+    "문일권"
+  ],
   "instructors": [
     "황혜진"
   ],

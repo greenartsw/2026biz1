@@ -297,20 +297,41 @@ function statusLabelFromText(value, preferMissing = false) {
   return "";
 }
 
+function nameInList(student, names) {
+  if (!student || !Array.isArray(names)) return false;
+  return names.includes(student.name) || names.includes(student.maskedName);
+}
+
+function isProjectMissingStudent(student) {
+  return nameInList(student, cfg.projectMissingNames)
+    || statusLabelFromText(student && student.project2Score, true) === "미응시"
+    || statusLabelFromText(student && student.projectScore, true) === "미응시"
+    || statusLabelFromText(summaryProject1Score(student), true) === "미응시";
+}
+
+function feedbackPageHidden(student) {
+  return nameInList(student, cfg.feedbackHiddenNames) || isProjectMissingStudent(student);
+}
+
+function studentStatusLabel(student) {
+  return statusLabelFromText(student && student.status);
+}
+
+function isDropoutStudent(student) {
+  return studentStatusLabel(student) === "중탈";
+}
+
 function summaryStatusLabel(student) {
-  return statusLabelFromText(student && student.status)
-    || statusLabelFromText(student && student.project2Score, true)
-    || statusLabelFromText(student && student.projectScore, true)
-    || statusLabelFromText(student && student.fit, true);
+  if (isProjectMissingStudent(student)) return "미응시";
+  if (isDropoutStudent(student)) return "미응시";
+  return "";
 }
 
 function summaryStatusDetail(student) {
-  const labels = [
-    statusLabelFromText(student && student.status),
-    statusLabelFromText(summaryProject1Score(student), true),
-    statusLabelFromText(student && student.fit, true)
-  ].filter(Boolean);
-  return [...new Set(labels)].join("/") || summaryStatusLabel(student);
+  const statusTag = studentStatusLabel(student);
+  const summaryTag = summaryStatusLabel(student);
+  if (statusTag && summaryTag && statusTag !== summaryTag) return statusTag + "/" + summaryTag;
+  return summaryTag || statusTag;
 }
 
 function isSummaryStatusOnlyRow(student) {
@@ -326,23 +347,38 @@ function matrixStatusValue(label) {
 }
 
 function matrixCellStatus(student, value) {
+  if (summaryStatusLabel(student) === "미응시") return "미응시";
   return statusLabelFromText(value, true) || summaryStatusLabel(student);
 }
 
 function renderMatrixRow(student, index) {
   const statusLabel = summaryStatusLabel(student);
-  const statusOnly = isSummaryStatusOnlyRow(student);
-  const statusBadge = summaryStatusBadge(statusLabel);
-  if (statusOnly) {
-    const teamCell = teamLabelVisible() ? '<span>' + esc(student.team.id) + '</span>' : "";
+  const dropout = isDropoutStudent(student);
+  const projectMissing = isProjectMissingStudent(student);
+  const statusBadge = summaryStatusBadge(studentStatusLabel(student) || statusLabel);
+  const teamCell = teamLabelVisible() ? '<span>' + esc(student.team.id) + '</span>' : "";
+  if (dropout) {
     return [
       '<div class="matrix-row matrix-muted matrix-status-row' + (teamLabelVisible() ? '' : ' matrix-no-team') + '">',
         '<span class="matrix-rank matrix-rank-status">-</span>',
         '<strong>' + esc(student.maskedName) + statusBadge + '</strong>',
         teamCell,
-        matrixStatusValue(matrixCellStatus(student, student.final)),
-        matrixStatusValue(matrixCellStatus(student, summaryProject1Score(student))),
-        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue(matrixCellStatus(student, student.fit)) + '</div>',
+        matrixStatusValue(studentStatusLabel(student) || "미응시"),
+        matrixStatusValue("미응시"),
+        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue("미응시") + '</div>',
+      '</div>'
+    ].join("");
+  }
+
+  if (projectMissing) {
+    return [
+      '<div class="matrix-row matrix-muted matrix-missing-row' + (teamLabelVisible() ? '' : ' matrix-no-team') + '">',
+        '<span class="matrix-rank">' + esc(index + 1) + '</span>',
+        '<strong>' + esc(student.maskedName) + statusBadge + '</strong>',
+        teamCell,
+        '<span>' + esc(scoreLabel(student.final)) + '</span>',
+        matrixStatusValue("미응시"),
+        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue("미응시") + '</div>',
       '</div>'
     ].join("");
   }
@@ -350,7 +386,6 @@ function renderMatrixRow(student, index) {
   const fit = numericScore(student.fit);
   const fitTone = fit >= 93 ? "teal" : fit >= 90 ? "blue" : fit >= 85 ? "amber" : "coral";
   const width = Math.max(0, Math.min(100, fit));
-  const teamCell = teamLabelVisible() ? '<span>' + esc(student.team.id) + '</span>' : "";
   return [
     '<div class="matrix-row matrix-' + fitTone + (teamLabelVisible() ? '' : ' matrix-no-team') + '">',
       '<span class="matrix-rank">' + esc(index + 1) + '</span>',
@@ -396,9 +431,12 @@ function teacherSummaryItems() {
 }
 
 function renderSummaryPage() {
-  const statusOnlyRows = students.filter(isSummaryStatusOnlyRow);
-  const scoredRows = students.filter((student) => !isSummaryStatusOnlyRow(student)).sort((a, b) => numericScore(b.fit) - numericScore(a.fit));
-  const active = scoredRows;
+  const active = activeStudents();
+  const dropouts = students.filter(isDropoutStudent);
+  const statusOnlyRows = students.filter((student) => isProjectMissingStudent(student) || isDropoutStudent(student));
+  const scoredRows = active.filter((student) => !isProjectMissingStudent(student)).sort((a, b) => numericScore(b.fit) - numericScore(a.fit));
+  const missingRows = active.filter(isProjectMissingStudent);
+  const dropoutRows = students.filter(isDropoutStudent);
   const finalAvg = averageFor(active, "final");
   const fitAvg = averageFor(active, "fit");
   const projectAvg = averageFor(active, "project");
@@ -408,7 +446,7 @@ function renderSummaryPage() {
   const attendanceRate = totalDays ? attendedDays / totalDays * 100 : null;
   const highFit = scoredRows.filter((student) => !isMissing(student.fit) && student.fit >= 90);
   const growthFocusStudents = scoredRows.filter((student) => student.group === "성장관리" || student.group === "참여안정" || student.final < 80 || student.fit < 85);
-  const matrix = [...scoredRows, ...statusOnlyRows];
+  const matrix = [...scoredRows, ...missingRows, ...dropoutRows];
   const recommendedLine = scoredRows.slice(0, 3).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>");
   const highFitLine = highFit.slice(0, 6).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>") || "90% 이상 후보 없음";
   const statusLine = statusOnlyRows.map((student) => esc(student.maskedName) + " " + esc(summaryStatusDetail(student))).join("<br>") || "상태 특이사항 없음";
@@ -427,14 +465,14 @@ function renderSummaryPage() {
       '<div class="summary-body">',
         '<section class="summary-main">',
           '<div class="summary-kpis">',
-            summaryMetric("대상 훈련생", students.length + "명", "통계 반영 " + active.length + "명 · 상태 " + statusOnlyRows.length + "명", "blue"),
+            summaryMetric("대상 훈련생", students.length + "명", "통계 반영 " + active.length + "명 · 중탈 " + dropouts.length + "명", "blue"),
             summaryMetric("본(재)평가 평균", scoreLabel(finalAvg), "재평가 원점수 기준", finalAvg >= 88 ? "teal" : "blue"),
             summaryMetric("통합 출석률", isMissing(attendanceRate) ? "-" : one(attendanceRate) + "%", "총 80시간", attendanceRate >= 96 ? "teal" : "blue"),
             summaryMetric("채용 적합도", isMissing(fitAvg) ? "-" : one(fitAvg) + "%", highFit.length + "명 90% 이상", fitAvg >= 90 ? "teal" : "blue"),
             summaryMetric(projectScoreLabel() + " 평균", scoreLabel(project1Avg), "참여도 평균 " + one(projectAvg) + "점", project1Avg >= 90 ? "teal" : "blue"),
           '</div>',
           '<section class="summary-panel matrix-panel">',
-            '<div class="section-title"><h3>종합성과</h3><span>통계는 상태 행 제외 · 표는 상태 표기 포함</span></div>',
+            '<div class="section-title"><h3>종합성과</h3><span>중탈 제외 통계 · 표는 상태 태그 포함</span></div>',
             '<div class="matrix-head' + (teamLabelVisible() ? '' : ' matrix-no-team') + '"><span>순위</span><span>훈련생</span>' + (teamLabelVisible() ? '<span>팀</span>' : '') + '<span>본평가</span><span>개인 ' + esc(projectScoreLabel()) + '</span><span>채용 적합도</span></div>',
             '<div class="matrix-list">' + matrix.map(renderMatrixRow).join("") + '</div>',
           '</section>',
@@ -1344,9 +1382,9 @@ function renderStudent(student) {
   const view = viewSelect.value;
   if (view === "summary") return renderSummaryPage();
   if (view === "page1") return renderPageOne(student);
-  if (view === "page2") return renderPageTwo(student);
+  if (view === "page2") return feedbackPageHidden(student) ? renderPageOne(student) : renderPageTwo(student);
   if (view === "cover") return renderCoverSelectionPage();
-  return renderPageOne(student) + renderPageTwo(student);
+  return renderPageOne(student) + (feedbackPageHidden(student) ? "" : renderPageTwo(student));
 }
 
 function selectedStudent() {
@@ -1370,7 +1408,7 @@ function render() {
   if (view === "summary") {
     deck.innerHTML = renderSummaryPage();
   } else if (view === "all") {
-    deck.innerHTML = renderSummaryPage() + reportStudents().map((student) => renderPageOne(student) + renderPageTwo(student)).join("") + (coverSelectionVisible() ? renderCoverSelectionPage() : "");
+    deck.innerHTML = renderSummaryPage() + reportStudents().map((student) => renderPageOne(student) + (feedbackPageHidden(student) ? "" : renderPageTwo(student))).join("") + (coverSelectionVisible() ? renderCoverSelectionPage() : "");
   } else if (view === "cover") {
     deck.innerHTML = renderCoverSelectionPage();
   } else {
