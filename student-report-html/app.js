@@ -319,6 +319,10 @@ function feedbackPageHidden(student) {
   return isDropoutStudent(student) || nameInList(student, cfg.feedbackHiddenNames) || isProjectMissingStudent(student);
 }
 
+function feedbackReviewClass(student) {
+  return adminModeEnabled() && feedbackPageHidden(student) ? " feedback-excluded-review" : "";
+}
+
 function studentStatusLabel(student) {
   return statusLabelFromText(student && student.status);
 }
@@ -646,13 +650,11 @@ function pageHeader(student, pageLabel) {
 }
 
 function renderPageOne(student) {
-  if (adminModeEnabled() && feedbackPageHidden(student)) {
-    return renderHiddenFeedbackPage(student, "page-one", "1");
-  }
   const projectTone = (summaryProject1Score(student) ?? student.project) >= 91 ? "teal" : (summaryProject1Score(student) ?? student.project) >= 85 ? "blue" : "amber";
   const fitTone = isMissing(student.fit) ? "coral" : student.fit >= 92 ? "teal" : student.fit >= 88 ? "blue" : "coral";
   return `
-    <section class="report-page page-one ${teamPanelVisible() ? "" : "page-one-no-team"}" data-page="1" data-student="${esc(student.name)}">
+    <section class="report-page page-one ${teamPanelVisible() ? "" : "page-one-no-team"}${feedbackReviewClass(student)}" data-page="1" data-student="${esc(student.name)}">
+      ${feedbackExcludedPostit(student)}
       ${pageHeader(student, "1P")}
       <div class="page-one-grid">
         <section class="identity-panel">
@@ -1322,7 +1324,8 @@ function renderCoverSelectionPage() {
 function renderPageTwo(student) {
   const studentKey = formStudentKey(student);
   return `
-    <section class="report-page page-two" data-page="2" data-student="${esc(student.name)}" data-student-key="${attr(studentKey)}">
+    <section class="report-page page-two${feedbackReviewClass(student)}" data-page="2" data-student="${esc(student.name)}" data-student-key="${attr(studentKey)}">
+      ${feedbackExcludedPostit(student)}
       ${pageHeader(student, "2P")}
       <div class="feedback-top">
         <section class="comment-card strength-card">
@@ -1393,6 +1396,23 @@ function excludedFeedbackLabel(student) {
   return studentStatusLabel(student) || summaryStatusLabel(student) || "미응시";
 }
 
+function excludedFeedbackSubLabel(student) {
+  if (isDropoutStudent(student)) return "중도탈락 · 피드백 비대상";
+  if (isProjectMissingStudent(student)) return projectScoreLabel() + " 미응시 · 피드백 비대상";
+  return "피드백 비대상";
+}
+
+function feedbackExcludedPostit(student) {
+  if (!adminModeEnabled() || !feedbackPageHidden(student)) return "";
+  return [
+    '<div class="feedback-excluded-postit" aria-label="상태 메모">',
+      '<span>관리자 확인</span>',
+      '<strong>' + esc(excludedFeedbackLabel(student)) + '</strong>',
+      '<em>' + esc(student.maskedName) + ' · ' + esc(excludedFeedbackSubLabel(student)) + '</em>',
+    '</div>'
+  ].join("");
+}
+
 function renderHiddenFeedbackPage(student, pageClass = "page-two", pageNumber = "2") {
   const studentKey = formStudentKey(student);
   const label = excludedFeedbackLabel(student);
@@ -1410,7 +1430,7 @@ function renderHiddenFeedbackPage(student, pageClass = "page-two", pageNumber = 
 }
 
 function renderFeedbackPage(student) {
-  return feedbackPageHidden(student) ? renderHiddenFeedbackPage(student) : renderPageTwo(student);
+  return feedbackPageHidden(student) && !adminModeEnabled() ? renderHiddenFeedbackPage(student) : renderPageTwo(student);
 }
 
 function renderAllReportPages() {
