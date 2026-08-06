@@ -26,7 +26,7 @@ let completedFeedbackLoaded = false;
 
 function initAdminDock() {
   const params = new URLSearchParams(location.search);
-  const enabled = ["1", "true", "yes", "admin"].includes(String(params.get("admin") || "").toLowerCase());
+  const enabled = adminModeEnabled();
   if (!adminDock || !enabled) return;
   adminDock.hidden = false;
   document.body.classList.add("admin-mode");
@@ -47,6 +47,12 @@ function initAdminDock() {
     });
   }
 }
+
+function adminModeEnabled() {
+  const params = new URLSearchParams(location.search);
+  return ["1", "true", "yes", "admin"].includes(String(params.get("admin") || "").toLowerCase());
+}
+
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -265,7 +271,7 @@ function activeStudents() {
 }
 
 function reportStudents() {
-  return activeStudents();
+  return adminModeEnabled() ? students : activeStudents();
 }
 
 function averageFor(list, key) {
@@ -310,7 +316,7 @@ function isProjectMissingStudent(student) {
 }
 
 function feedbackPageHidden(student) {
-  return nameInList(student, cfg.feedbackHiddenNames) || isProjectMissingStudent(student);
+  return isDropoutStudent(student) || nameInList(student, cfg.feedbackHiddenNames) || isProjectMissingStudent(student);
 }
 
 function studentStatusLabel(student) {
@@ -638,6 +644,9 @@ function pageHeader(student, pageLabel) {
 }
 
 function renderPageOne(student) {
+  if (adminModeEnabled() && feedbackPageHidden(student)) {
+    return renderHiddenFeedbackPage(student, "page-one", "1");
+  }
   const projectTone = (summaryProject1Score(student) ?? student.project) >= 91 ? "teal" : (summaryProject1Score(student) ?? student.project) >= 85 ? "blue" : "amber";
   const fitTone = isMissing(student.fit) ? "coral" : student.fit >= 92 ? "teal" : student.fit >= 88 ? "blue" : "coral";
   return `
@@ -1378,13 +1387,47 @@ function renderPageTwo(student) {
   `;
 }
 
+function excludedFeedbackLabel(student) {
+  return studentStatusLabel(student) || summaryStatusLabel(student) || "미응시";
+}
+
+function renderHiddenFeedbackPage(student, pageClass = "page-two", pageNumber = "2") {
+  const studentKey = formStudentKey(student);
+  const label = excludedFeedbackLabel(student);
+  return `
+    <section class="report-page ${esc(pageClass)} feedback-excluded-page" data-page="${esc(pageNumber)}" data-feedback-hidden="true" data-student="${esc(student.name)}" data-student-key="${attr(studentKey)}">
+      <div class="feedback-excluded-mask">
+        <div class="feedback-excluded-card">
+          <span>기업 피드백 제외</span>
+          <strong>${esc(label)}</strong>
+          <em>${esc(student.maskedName)} · ${esc(projectScoreLabel())} 피드백 비대상</em>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderFeedbackPage(student) {
+  return feedbackPageHidden(student) ? renderHiddenFeedbackPage(student) : renderPageTwo(student);
+}
+
+function renderAllReportPages() {
+  const displayed = reportStudents();
+  const displayedKeys = new Set(displayed.map(formStudentKey));
+  const hiddenOnly = adminModeEnabled()
+    ? []
+    : students.filter((student) => !displayedKeys.has(formStudentKey(student)) && feedbackPageHidden(student));
+  return displayed.map((student) => renderPageOne(student) + renderFeedbackPage(student)).join("")
+    + hiddenOnly.map(renderHiddenFeedbackPage).join("");
+}
+
 function renderStudent(student) {
   const view = viewSelect.value;
   if (view === "summary") return renderSummaryPage();
   if (view === "page1") return renderPageOne(student);
-  if (view === "page2") return feedbackPageHidden(student) ? renderPageOne(student) : renderPageTwo(student);
+  if (view === "page2") return renderFeedbackPage(student);
   if (view === "cover") return renderCoverSelectionPage();
-  return renderPageOne(student) + (feedbackPageHidden(student) ? "" : renderPageTwo(student));
+  return renderPageOne(student) + renderFeedbackPage(student);
 }
 
 function selectedStudent() {
@@ -1408,7 +1451,7 @@ function render() {
   if (view === "summary") {
     deck.innerHTML = renderSummaryPage();
   } else if (view === "all") {
-    deck.innerHTML = renderSummaryPage() + reportStudents().map((student) => renderPageOne(student) + (feedbackPageHidden(student) ? "" : renderPageTwo(student))).join("") + (coverSelectionVisible() ? renderCoverSelectionPage() : "");
+    deck.innerHTML = renderSummaryPage() + renderAllReportPages() + (coverSelectionVisible() ? renderCoverSelectionPage() : "");
   } else if (view === "cover") {
     deck.innerHTML = renderCoverSelectionPage();
   } else {
