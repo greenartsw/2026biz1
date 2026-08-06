@@ -286,13 +286,31 @@ function summaryMetric(label, value, meta, tone = "blue") {
   ].join("");
 }
 
-function summaryStatusLabel(student) {
-  const status = String(student && student.status ? student.status : "").replace(/\s+/g, " ").trim();
+function statusLabelFromText(value, preferMissing = false) {
+  const status = String(value ?? "").replace(/\s+/g, " ").trim();
   if (!status) return "";
   if (status.includes("중탈")) return "중탈";
+  if (preferMissing && status.includes("미응시")) return "미응시";
   if (status.includes("취업")) return "취업";
   if (status.includes("수료")) return "수료";
+  if (status.includes("미응시")) return "미응시";
   return "";
+}
+
+function summaryStatusLabel(student) {
+  return statusLabelFromText(student && student.status)
+    || statusLabelFromText(student && student.project2Score, true)
+    || statusLabelFromText(student && student.projectScore, true)
+    || statusLabelFromText(student && student.fit, true);
+}
+
+function summaryStatusDetail(student) {
+  const labels = [
+    statusLabelFromText(student && student.status),
+    statusLabelFromText(summaryProject1Score(student), true),
+    statusLabelFromText(student && student.fit, true)
+  ].filter(Boolean);
+  return [...new Set(labels)].join("/") || summaryStatusLabel(student);
 }
 
 function isSummaryStatusOnlyRow(student) {
@@ -307,6 +325,10 @@ function matrixStatusValue(label) {
   return '<span class="matrix-status-value">' + esc(label) + '</span>';
 }
 
+function matrixCellStatus(student, value) {
+  return statusLabelFromText(value, true) || summaryStatusLabel(student);
+}
+
 function renderMatrixRow(student, index) {
   const statusLabel = summaryStatusLabel(student);
   const statusOnly = isSummaryStatusOnlyRow(student);
@@ -318,9 +340,9 @@ function renderMatrixRow(student, index) {
         '<span class="matrix-rank matrix-rank-status">-</span>',
         '<strong>' + esc(student.maskedName) + statusBadge + '</strong>',
         teamCell,
-        matrixStatusValue(statusLabel),
-        matrixStatusValue(statusLabel),
-        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue(statusLabel) + '</div>',
+        matrixStatusValue(matrixCellStatus(student, student.final)),
+        matrixStatusValue(matrixCellStatus(student, summaryProject1Score(student))),
+        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue(matrixCellStatus(student, student.fit)) + '</div>',
       '</div>'
     ].join("");
   }
@@ -374,8 +396,9 @@ function teacherSummaryItems() {
 }
 
 function renderSummaryPage() {
-  const active = activeStudents();
-  const dropouts = students.filter((student) => student.status === "중탈");
+  const statusOnlyRows = students.filter(isSummaryStatusOnlyRow);
+  const scoredRows = students.filter((student) => !isSummaryStatusOnlyRow(student)).sort((a, b) => numericScore(b.fit) - numericScore(a.fit));
+  const active = scoredRows;
   const finalAvg = averageFor(active, "final");
   const fitAvg = averageFor(active, "fit");
   const projectAvg = averageFor(active, "project");
@@ -383,14 +406,12 @@ function renderSummaryPage() {
   const attendedDays = sumFor(active, "attendedDays");
   const totalDays = sumFor(active, "totalDays");
   const attendanceRate = totalDays ? attendedDays / totalDays * 100 : null;
-  const statusOnlyRows = students.filter(isSummaryStatusOnlyRow);
-  const scoredRows = students.filter((student) => !isSummaryStatusOnlyRow(student)).sort((a, b) => numericScore(b.fit) - numericScore(a.fit));
   const highFit = scoredRows.filter((student) => !isMissing(student.fit) && student.fit >= 90);
   const growthFocusStudents = scoredRows.filter((student) => student.group === "성장관리" || student.group === "참여안정" || student.final < 80 || student.fit < 85);
   const matrix = [...scoredRows, ...statusOnlyRows];
   const recommendedLine = scoredRows.slice(0, 3).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>");
   const highFitLine = highFit.slice(0, 6).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>") || "90% 이상 후보 없음";
-  const statusLine = statusOnlyRows.map((student) => esc(student.maskedName) + " " + esc(summaryStatusLabel(student))).join("<br>") || "상태 특이사항 없음";
+  const statusLine = statusOnlyRows.map((student) => esc(student.maskedName) + " " + esc(summaryStatusDetail(student))).join("<br>") || "상태 특이사항 없음";
   const focusLine = growthFocusStudents.slice(0, 4).map((student) => esc(student.maskedName) + " " + esc(student.group)).join("<br>") || "추가 관리군 없음";
 
   return [
@@ -406,14 +427,14 @@ function renderSummaryPage() {
       '<div class="summary-body">',
         '<section class="summary-main">',
           '<div class="summary-kpis">',
-            summaryMetric("대상 훈련생", students.length + "명", "통계 반영 " + active.length + "명 · 중탈 " + dropouts.length + "명", "blue"),
+            summaryMetric("대상 훈련생", students.length + "명", "통계 반영 " + active.length + "명 · 상태 " + statusOnlyRows.length + "명", "blue"),
             summaryMetric("본(재)평가 평균", scoreLabel(finalAvg), "재평가 원점수 기준", finalAvg >= 88 ? "teal" : "blue"),
             summaryMetric("통합 출석률", isMissing(attendanceRate) ? "-" : one(attendanceRate) + "%", "총 80시간", attendanceRate >= 96 ? "teal" : "blue"),
             summaryMetric("채용 적합도", isMissing(fitAvg) ? "-" : one(fitAvg) + "%", highFit.length + "명 90% 이상", fitAvg >= 90 ? "teal" : "blue"),
             summaryMetric(projectScoreLabel() + " 평균", scoreLabel(project1Avg), "참여도 평균 " + one(projectAvg) + "점", project1Avg >= 90 ? "teal" : "blue"),
           '</div>',
           '<section class="summary-panel matrix-panel">',
-            '<div class="section-title"><h3>종합성과</h3><span>통계는 중탈 제외 · 표는 상태 표기 포함</span></div>',
+            '<div class="section-title"><h3>종합성과</h3><span>통계는 상태 행 제외 · 표는 상태 표기 포함</span></div>',
             '<div class="matrix-head' + (teamLabelVisible() ? '' : ' matrix-no-team') + '"><span>순위</span><span>훈련생</span>' + (teamLabelVisible() ? '<span>팀</span>' : '') + '<span>본평가</span><span>개인 ' + esc(projectScoreLabel()) + '</span><span>채용 적합도</span></div>',
             '<div class="matrix-list">' + matrix.map(renderMatrixRow).join("") + '</div>',
           '</section>',
