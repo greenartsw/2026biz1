@@ -8,6 +8,14 @@
 - 기존 학생 토큰 링크에서 개인 성적, 기업 피드백, 선정 팀 표지가 정상 표시됨
 - 시트 헤더의 줄바꿈·공백 변형을 허용하는 수정이 적용됨
 - 운영 Apps Script 원본과 수정 전 원본이 모두 GitHub에 보존됨
+- 프로젝트2 오름 개인별 피드백 대시보드는 `student-report-html/index2.html`과 `cover2.html`로 분리됨
+- 프로젝트1·2 슈퍼어드민 런처는 `project1-admin.html`, `project2-admin.html`로 추가됨
+- 슈퍼어드민 런처는 공개 페이지이므로 비밀값을 두지 않고, 실제 권한 통제는 Apps Script와 Google Sheets 설정에서 관리해야 함
+- 프로젝트2 화면에서는 개인별 페이지의 팀평가 영역과 `view=all`의 표지선정 설문 영역이 제외됨
+- 프로젝트2 실제 점수는 `프로젝트2 평가결과` 탭 기준으로 `data-project2-oorum.js`에 반영됨
+- 프로젝트2 전용 Apps Script 배포 원본은 `apps-script/Code.project2-oorum.gs`에 준비됨
+- 프로젝트2 Apps Script 관리자 화면에서는 표지선정 완료 조건 없이 개인별 피드백 발송을 관리하도록 수정됨
+- 프로젝트2 Apps Script 웹앱 URL은 아직 연결 전이며, 배포 후 `data-project2-oorum.js`의 `feedbackEndpoint`에 반영해야 함
 
 ## 집에서 이어서 시작하기
 
@@ -58,6 +66,8 @@ ZIP 다운로드본은 참고 백업일 뿐 Git 이력이 없으므로 실제 �
 - `AGENTS.md`
 - `.agents/skills/sync-project-backup/SKILL.md`
 - `docs/debug-history/2026-07-15-student-report-debug.md`
+- `docs/debug-history/2026-08-06-project2-oorum-dashboard.md`
 - `apps-script/Code.gs`
+- `apps-script/Code.project2-oorum.gs`
 - `apps-script/Code.live-original.gs`
 - `student-report-html/google-apps-script_bak/feedback-webapp.gs`

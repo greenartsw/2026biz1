@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>프로젝트1 성과 리포트 Admin</title>
+    <link rel="stylesheet" href="./project-admin.css" />
+  </head>
+  <body>
+    <main class="admin-shell" data-report-path="student-report-html/index.html">
+      <section class="admin-panel" aria-labelledby="pageTitle">
+        <p class="eyebrow">기맞1차-프로젝트1-(주)더페이퍼</p>
+        <h1 id="pageTitle">기업 회신용 개인별 성과 리포트(Admin)</h1>
+
+        <div class="controls">
+          <label>
+            훈련생
+            <select id="studentSelect">
+              <option value="__all__">전체 훈련생</option>
+            </select>
+          </label>
+          <label>
+            보기
+            <select id="viewSelect">
+              <option value="all">전체</option>
+              <option value="summary">요약</option>
+              <option value="both">개인별 1+2P</option>
+              <option value="page1">개인별 1P</option>
+              <option value="page2">개인별 2P</option>
+              <option value="cover">표지 선정</option>
+            </select>
+          </label>
+          <label>
+            테마
+            <select id="themeSelect">
+              <option value="white">화이트</option>
+              <option value="dark">다크</option>
+            </select>
+          </label>
+          <label class="check-label">
+            <input id="adminMode" type="checkbox" />
+            관리자 모드
+          </label>
+          <button id="openButton" type="button">새 창 열기</button>
+        </div>
+
+        <p id="urlPreview" class="url-preview"></p>
+        <div class="quick-links" aria-label="빠른 이동">
+          <a href="student-report-html/cover.html">표지</a>
+          <a href="student-report-html/index.html?view=all&amp;theme=white">전체 리포트</a>
+          <a href="student-report-html/index.html?view=all&amp;theme=white&amp;admin=1">관리자 모드</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="student-report-html/data.js"></script>
+    <script src="./project-admin.js"></script>
+  </body>
+</html>
