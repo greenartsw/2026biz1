@@ -271,7 +271,7 @@ function activeStudents() {
 }
 
 function reportStudents() {
-  return adminModeEnabled() ? students : activeStudents();
+  return adminModeEnabled() ? students : activeStudents().filter((student) => !feedbackPageHidden(student));
 }
 
 function averageFor(list, key) {
