@@ -9,8 +9,8 @@ window.REPORT_CONFIG = {
   "companyName": "(주)오름",
   "reportTitle": "개인별 훈련생 성과 리포트",
   "feedbackSheetUrl": "https://docs.google.com/spreadsheets/d/1mgA6LT6-Ny1a4xKM3xnmVcgIRo2DwajuDtsgNNo3MxY/edit",
-  "feedbackEndpoint": "",
-  "adminEndpoint": "",
+  "feedbackEndpoint": "https://script.google.com/macros/s/AKfycbx_SA7t94i_5Ks06YCT62RxJOYpDNEMGRrFnkwc7pcxJIo298uvi5KaJagnfWP0whYi3w/exec",
+  "adminEndpoint": "https://script.google.com/macros/s/AKfycbx_SA7t94i_5Ks06YCT62RxJOYpDNEMGRrFnkwc7pcxJIo298uvi5KaJagnfWP0whYi3w/exec",
   "missingScoreLabel": "미응시",
   "scoreSource": {
     "spreadsheetId": "1KrOHVkR38Ms6IQkNkTxFTjkIo9v7jkAKNGE-OfxjF8w",
