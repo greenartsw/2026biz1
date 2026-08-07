@@ -91,6 +91,7 @@ body.theme-dark .toolbar { background: rgba(15, 23, 42, 0.94); }
 }
 .report-page {
   position: relative;
+  scroll-margin-top: 82px;
   width: min(1600px, calc(100vw - 48px));
   aspect-ratio: 16 / 9;
   overflow: hidden;
@@ -151,6 +152,17 @@ body.theme-dark .toolbar { background: rgba(15, 23, 42, 0.94); }
   gap: 18px 24px;
   height: calc(100% - 142px);
   padding: 0 42px 16px;
+}
+.page-one-no-team .page-one-grid {
+  grid-template-columns: 1fr;
+  grid-template-rows: 120px 1fr;
+}
+.page-one-no-team .identity-panel,
+.page-one-no-team .score-panel {
+  grid-column: 1 / 2;
+}
+.page-one-no-team .score-panel {
+  padding: 22px;
 }
 .identity-panel, .score-panel, .team-panel, .comment-card, .enterprise-form, .memo-panel {
   border: 1px solid var(--line);
@@ -506,6 +518,92 @@ body.theme-dark .toolbar { background: rgba(15, 23, 42, 0.94); }
 .feedback-status[data-tone="error"] { border-color: rgba(233,109,91,0.42); color: var(--coral); background: rgba(233,109,91,0.10); }
 .feedback-status[data-tone="pending"] { border-color: rgba(223,154,34,0.42); color: var(--amber); background: rgba(223,154,34,0.10); }
 input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--teal); }
+
+.feedback-excluded-page {
+  display: none;
+}
+body.admin-mode .feedback-excluded-page {
+  display: none;
+}
+.feedback-excluded-page::before,
+.feedback-excluded-page::after {
+  display: none;
+}
+.feedback-excluded-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #eef2f7 0%, #d8dee7 100%);
+}
+.feedback-excluded-card {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  min-width: 430px;
+  padding: 46px 58px;
+  border: 1px solid #cbd5e1;
+  background: rgba(255,255,255,0.56);
+  box-shadow: 0 22px 64px rgba(51,65,85,0.18);
+  text-align: center;
+}
+.feedback-excluded-card span {
+  color: #64748b;
+  font-size: 16px;
+  font-weight: 950;
+}
+.feedback-excluded-card strong {
+  color: #334155;
+  font-size: 82px;
+  line-height: 0.95;
+  font-weight: 1000;
+}
+.feedback-excluded-card em {
+  color: #64748b;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 900;
+}
+.feedback-excluded-review > :not(.feedback-excluded-postit) {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.feedback-excluded-postit {
+  position: absolute;
+  top: 108px;
+  right: 54px;
+  z-index: 8;
+  display: grid;
+  gap: 7px;
+  min-width: 228px;
+  max-width: 300px;
+  padding: 20px 22px 18px;
+  border: 1px solid #e5c85a;
+  border-left: 8px solid #f59e0b;
+  background: #fff3a6;
+  box-shadow: 0 18px 42px rgba(51,65,85,0.22), inset 0 -10px 22px rgba(245,158,11,0.10);
+  color: #334155;
+  transform: rotate(1.2deg);
+}
+.feedback-excluded-postit span {
+  color: #9a6700;
+  font-size: 13px;
+  font-weight: 950;
+}
+.feedback-excluded-postit strong {
+  color: #1f2937;
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 1000;
+}
+.feedback-excluded-postit em {
+  color: #64748b;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1.32;
+}
 .rating-table { display: grid; gap: 7px; }
 .rating-row { display: grid; grid-template-columns: minmax(260px, 1fr) 340px; align-items: center; gap: 16px; min-height: 40px; padding: 6px 10px; border: 1px solid var(--soft-line); border-radius: 0; background: var(--panel-soft); }
 .rating-row strong { color: var(--ink); font-size: 14px; }
@@ -642,6 +740,10 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
   align-items: center;
   gap: 10px;
 }
+.matrix-head.matrix-no-team,
+.matrix-row.matrix-no-team {
+  grid-template-columns: 44px 1.25fr 0.85fr 0.95fr 1.35fr;
+}
 .matrix-head {
   height: 32px;
   padding: 0 12px;
@@ -661,6 +763,20 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
   font-weight: 850;
 }
 .matrix-row strong { color: var(--navy); font-size: 14px; }
+.summary-status-badge {
+  display: inline-grid;
+  place-items: center;
+  min-height: 18px;
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 1px solid #cbd5e1;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  vertical-align: middle;
+}
 .matrix-rank {
   display: grid;
   place-items: center;
@@ -689,11 +805,50 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
 .matrix-blue { border-left: 5px solid var(--blue); }
 .matrix-amber { border-left: 5px solid var(--amber); }
 .matrix-coral { border-left: 5px solid var(--coral); }
+.matrix-muted {
+  border-left: 5px solid #94a3b8;
+  background: #f8fafc;
+  color: #64748b;
+}
+.matrix-muted strong,
+.matrix-muted .matrix-rank,
+.matrix-muted .matrix-fit b {
+  color: #64748b;
+}
+.matrix-rank-status {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+.matrix-status-value {
+  display: inline-grid;
+  place-items: center;
+  justify-self: start;
+  min-height: 22px;
+  padding: 0 9px;
+  border: 1px solid #cbd5e1;
+  background: #eef2f7;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+.matrix-fit-status {
+  grid-template-columns: 1fr;
+  justify-items: start;
+}
 .summary-aside {
   min-width: 0;
   display: grid;
   grid-template-rows: 142px minmax(0, 1fr);
   gap: 16px;
+}
+.summary-page.summary-no-team .summary-aside {
+  grid-template-rows: 1fr;
+}
+.summary-page.summary-no-team .insight-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: stretch;
 }
 .insight-panel, .team-summary-panel, .unit-summary-panel { padding: 16px; min-height: 0; overflow: hidden; }
 .team-summary-panel { display: grid; grid-template-rows: auto minmax(0, 1fr); }
@@ -733,6 +888,66 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
   line-height: 1.16;
   white-space: normal;
   word-break: keep-all;
+}
+.insight-stack-rich {
+  height: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: 1.08fr 1fr;
+}
+.insight-stack-rich .insight-card {
+  min-height: 132px;
+  padding: 12px;
+  border: 1px solid var(--soft-line);
+  background: var(--panel-soft);
+  align-content: start;
+  gap: 7px;
+  overflow: hidden;
+}
+.summary-page.summary-no-team .insight-stack-rich .insight-card {
+  min-height: 0;
+}
+.insight-card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+.insight-card strong {
+  color: var(--navy);
+  font-size: 29px;
+  line-height: 1;
+}
+.insight-card em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+.insight-card b {
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.28;
+  word-break: keep-all;
+}
+.insight-card-hero {
+  border-left: 6px solid var(--teal);
+  background: linear-gradient(180deg, rgba(2,165,157,0.08), var(--panel-soft));
+}
+.insight-card-list {
+  border-left: 6px solid var(--blue);
+  background: linear-gradient(180deg, rgba(20,80,186,0.08), var(--panel-soft));
+}
+.insight-card-muted {
+  border-left: 6px solid #94a3b8;
+  background: linear-gradient(180deg, rgba(100,116,139,0.08), #f8fafc);
+}
+.insight-card-muted strong,
+.insight-card-muted b {
+  color: #64748b;
+}
+.insight-card-note {
+  border-left: 6px solid var(--amber);
+  background: linear-gradient(180deg, rgba(232,159,36,0.1), var(--panel-soft));
 }
 .summary-teams { display: grid; gap: 9px; }
 .summary-team {
@@ -1048,6 +1263,27 @@ body.capture .report-page { width: 100vw; border-radius: 0; box-shadow: none; }
 .admin-dock.is-collapsed iframe { display: none; }
 body.theme-dark .admin-dock { background: #111b2d; }
 body.admin-mode .deck { padding-top: 28px; }
+
+.cover-selection-disabled-message {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  height: calc(100% - 110px);
+  padding: 90px 42px 42px;
+}
+.cover-selection-disabled-message h1 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 42px;
+}
+.cover-selection-disabled-message p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 800;
+}
 
 .cover-selection-form.cover-review-mode.is-cover-complete {
   grid-template-rows: auto minmax(0, 1fr);

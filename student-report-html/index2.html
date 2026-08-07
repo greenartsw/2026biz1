@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>프로젝트2 오름 개인별 훈련생 성과 리포트</title>
+    <link rel="stylesheet" href="./styles.css?v=20260806-review1" />
+  </head>
+  <body>
+    <header class="toolbar" data-ui>
+      <div class="brand">
+        <img class="brand-logo" src="./assets/greensw_logo.png" alt="그린컴퓨터아카데미 수원" />
+        <div class="brand-copy">
+          <strong>프로젝트2 오름 개인별 성과 리포트</strong>
+        </div>
+      </div>
+    </header>
+    <section id="adminDock" class="admin-dock" data-ui hidden>
+      <div class="admin-dock-head">
+        <div>
+          <strong>프로젝트2 어드민 모드</strong>
+          <span>오름 기업 피드백 접수 확인 · 학생 메일 발송 관리</span>
+        </div>
+        <div class="admin-dock-actions">
+          <button id="adminDockToggle" type="button" aria-expanded="true">접기</button>
+        </div>
+      </div>
+      <iframe
+        id="adminDashboardFrame"
+        title="프로젝트2 발송 어드민"
+        data-src=""
+        loading="lazy"
+      ></iframe>
+    </section>
+    <main id="reportDeck" class="deck" aria-live="polite"></main>
+    <script src="./data-project2-oorum.js?v=20260806-review1"></script>
+    <script src="./app.js?v=20260806-review1"></script>
+  </body>
+</html>

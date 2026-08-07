@@ -99,6 +99,9 @@ body {
   font-size: 0.84em;
   line-height: 1.04;
 }
+.cover-title h1 .title-project-long {
+  font-size: 0.62em;
+}
 .cover-title h1 .title-company {
   font-size: 0.82em;
 }

@@ -26,12 +26,18 @@ let completedFeedbackLoaded = false;
 
 function initAdminDock() {
   const params = new URLSearchParams(location.search);
-  const enabled = ["1", "true", "yes", "admin"].includes(String(params.get("admin") || "").toLowerCase());
+  const enabled = adminModeEnabled();
   if (!adminDock || !enabled) return;
   adminDock.hidden = false;
   document.body.classList.add("admin-mode");
-  if (adminDashboardFrame && adminDashboardFrame.dataset.src && !adminDashboardFrame.src) {
-    adminDashboardFrame.src = adminDashboardFrame.dataset.src;
+  if (!coverSelectionVisible()) {
+    adminDock.querySelectorAll("[data-cover-link]").forEach((item) => {
+      item.hidden = true;
+    });
+  }
+  const dashboardSrc = params.get("adminEndpoint") || cfg.adminEndpoint || (adminDashboardFrame && adminDashboardFrame.dataset ? adminDashboardFrame.dataset.src : "");
+  if (adminDashboardFrame && dashboardSrc && !adminDashboardFrame.src) {
+    adminDashboardFrame.src = dashboardSrc;
   }
   if (adminDockToggle) {
     adminDockToggle.addEventListener("click", () => {
@@ -41,6 +47,12 @@ function initAdminDock() {
     });
   }
 }
+
+function adminModeEnabled() {
+  const params = new URLSearchParams(location.search);
+  return ["1", "true", "yes", "admin"].includes(String(params.get("admin") || "").toLowerCase());
+}
+
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -89,7 +101,13 @@ function attr(value) {
 }
 
 function isMissing(value) {
-  return value === null || value === undefined || value === "" || value === "중탈";
+  return value === null || value === undefined || value === "" || value === "중탈" || value === "미응시";
+}
+
+function missingValueLabel(value) {
+  if (value === "미응시") return "미응시";
+  if (value === "중탈") return "중탈";
+  return cfg.missingScoreLabel || "중탈";
 }
 
 function one(value) {
@@ -98,11 +116,11 @@ function one(value) {
 }
 
 function scoreLabel(value) {
-  return isMissing(value) ? "중탈" : one(value) + "점";
+  return isMissing(value) ? missingValueLabel(value) : one(value) + "점";
 }
 
 function percentLabel(value) {
-  return isMissing(value) ? "중탈" : value + "%";
+  return isMissing(value) ? missingValueLabel(value) : value + "%";
 }
 
 function signed(value) {
@@ -115,36 +133,87 @@ function slug(value) {
   return String(value || "").replace(/\s+/g, "").toLowerCase();
 }
 
+function featureEnabled(name, fallback = true) {
+  const features = cfg.features || {};
+  if (!Object.prototype.hasOwnProperty.call(features, name)) return fallback;
+  return Boolean(features[name]);
+}
+
+function projectScoreLabel() {
+  return cfg.projectScoreLabel || cfg.projectName || "프로젝트";
+}
+
+function projectScoreMeta() {
+  return cfg.projectScoreMeta || "개인 평가의견서";
+}
+
+function reportFooter() {
+  return [cfg.issuer || "그린컴퓨터아카데미 수원", cfg.companyName].filter(Boolean).join(" · ");
+}
+
+function teamLabelVisible() {
+  return featureEnabled("teamLabels", true);
+}
+
+function teamPanelVisible() {
+  return featureEnabled("teamPanel", true);
+}
+
+function teamSummaryVisible() {
+  return featureEnabled("teamSummary", true);
+}
+
+function collaborationMetricsVisible() {
+  return featureEnabled("collaborationMetrics", true);
+}
+
+function coverSelectionVisible() {
+  return featureEnabled("coverSelection", true);
+}
+
 function avgScore(values) {
   const usable = values.filter((value) => !isMissing(value)).map(Number);
   if (!usable.length) return null;
   return usable.reduce((sum, value) => sum + value, 0) / usable.length;
 }
 
+function numericScore(value) {
+  if (isMissing(value)) return 0;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
 function summaryProject1Score(student) {
-  return student ? student.project1Score : null;
+  if (!student) return null;
+  const candidates = [student.projectScore, student.project2Score, student.project1Score, student.project];
+  return candidates.find((value) => value !== undefined && value !== null && value !== "") ?? null;
 }
 
 function projectAlignedText(value, student) {
   const score = summaryProject1Score(student);
+  const label = projectScoreLabel();
   if (isMissing(score)) return value;
   const scoreText = one(score) + "점";
   return String(value ?? "")
-    .replace(new RegExp("프로젝트1\\s*최종\\s*평가는\\s*\\d+(?:\\.\\d+)?점", "g"), "프로젝트1 최종 평가는 " + scoreText)
-    .replace(new RegExp("프로젝트1\\s*(?:재평가|재시험)\\s*원점수\\s*\\d+/?90을\\s*90점\\s*만점\\s*패널티가\\s*적용된\\s*재평가\\s*원점수\\s*\\d+(?:\\.\\d+)?점", "g"), "프로젝트1 재평가 원점수는 팀 종합 기준 " + scoreText)
-    .replace(new RegExp("프로젝트1\\s*(?:개인 평가 점수가\\s*)?\\d+(?:\\.\\d+)?점", "g"), "프로젝트1 " + scoreText);
+    .replace(new RegExp("프로젝트1\\s*최종\\s*평가는\\s*\\d+(?:\\.\\d+)?점", "g"), label + " 최종 평가는 " + scoreText)
+    .replace(new RegExp("프로젝트1\\s*(?:재평가|재시험)\\s*원점수\\s*\\d+/?90을\\s*90점\\s*만점\\s*패널티가\\s*적용된\\s*재평가\\s*원점수\\s*\\d+(?:\\.\\d+)?점", "g"), label + " 재평가 원점수는 개인 종합 기준 " + scoreText)
+    .replace(new RegExp("프로젝트1\\s*(?:개인 평가 점수가\\s*)?\\d+(?:\\.\\d+)?점", "g"), label + " " + scoreText)
+    .replace(/프로젝트1/g, label);
 }
 function findTeam(studentName) {
-  return cfg.teams.find((team) => team.members.includes(studentName)) || cfg.teams[0];
+  const teams = cfg.teams || [];
+  return teams.find((team) => (team.members || []).includes(studentName)) || teams[0] || { id: "개인", members: [studentName], company: cfg.companyName };
 }
 
 function classify(student) {
+  const fit = student.fit;
+  const projectScore = summaryProject1Score(student);
   if (student.status === "중탈") return "중탈";
-  if (student.fit >= 94) return "최우수";
-  if (student.fit >= 91) return "우수";
-  if (student.project >= 91 || student.grade === "A") return "협업강점";
-  if (student.final < 80 || student.fit < 85) return "성장관리";
-  if (student.attendance < 90) return "참여안정";
+  if (!isMissing(fit) && fit >= 94) return "최우수";
+  if (!isMissing(fit) && fit >= 91) return "우수";
+  if ((!isMissing(projectScore) && projectScore >= 91) || student.grade === "A") return "프로젝트강점";
+  if ((!isMissing(student.final) && student.final < 80) || (!isMissing(fit) && fit < 85)) return "성장관리";
+  if (!isMissing(student.attendance) && student.attendance < 90) return "참여안정";
   return "안정";
 }
 function buildInsights(student) {
@@ -202,7 +271,7 @@ function activeStudents() {
 }
 
 function reportStudents() {
-  return activeStudents();
+  return adminModeEnabled() ? students : activeStudents().filter((student) => !feedbackPageHidden(student));
 }
 
 function averageFor(list, key) {
@@ -223,15 +292,115 @@ function summaryMetric(label, value, meta, tone = "blue") {
   ].join("");
 }
 
+function statusLabelFromText(value, preferMissing = false) {
+  const status = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (!status) return "";
+  if (status.includes("중탈")) return "중탈";
+  if (preferMissing && status.includes("미응시")) return "미응시";
+  if (status.includes("취업")) return "취업";
+  if (status.includes("수료")) return "수료";
+  if (status.includes("미응시")) return "미응시";
+  return "";
+}
+
+function nameInList(student, names) {
+  if (!student || !Array.isArray(names)) return false;
+  return names.includes(student.name) || names.includes(student.maskedName);
+}
+
+function isProjectMissingStudent(student) {
+  return nameInList(student, cfg.projectMissingNames)
+    || statusLabelFromText(student && student.project2Score, true) === "미응시"
+    || statusLabelFromText(student && student.projectScore, true) === "미응시"
+    || statusLabelFromText(summaryProject1Score(student), true) === "미응시";
+}
+
+function feedbackPageHidden(student) {
+  return isDropoutStudent(student) || nameInList(student, cfg.feedbackHiddenNames) || isProjectMissingStudent(student);
+}
+
+function feedbackReviewClass(student) {
+  return adminModeEnabled() && feedbackPageHidden(student) ? " feedback-excluded-review" : "";
+}
+
+function studentStatusLabel(student) {
+  return statusLabelFromText(student && student.status);
+}
+
+function isDropoutStudent(student) {
+  return studentStatusLabel(student) === "중탈";
+}
+
+function summaryStatusLabel(student) {
+  if (isProjectMissingStudent(student)) return "미응시";
+  if (isDropoutStudent(student)) return "미응시";
+  return "";
+}
+
+function summaryStatusDetail(student) {
+  const statusTag = studentStatusLabel(student);
+  const summaryTag = summaryStatusLabel(student);
+  if (statusTag && summaryTag && statusTag !== summaryTag) return statusTag + "/" + summaryTag;
+  return summaryTag || statusTag;
+}
+
+function isSummaryStatusOnlyRow(student) {
+  return Boolean(summaryStatusLabel(student));
+}
+
+function summaryStatusBadge(label) {
+  return label ? '<span class="summary-status-badge">' + esc(label) + '</span>' : "";
+}
+
+function matrixStatusValue(label) {
+  return '<span class="matrix-status-value">' + esc(label) + '</span>';
+}
+
+function matrixCellStatus(student, value) {
+  if (summaryStatusLabel(student) === "미응시") return "미응시";
+  return statusLabelFromText(value, true) || summaryStatusLabel(student);
+}
+
 function renderMatrixRow(student, index) {
-  const fit = isMissing(student.fit) ? 0 : Number(student.fit);
+  const statusLabel = summaryStatusLabel(student);
+  const dropout = isDropoutStudent(student);
+  const projectMissing = isProjectMissingStudent(student);
+  const statusBadge = summaryStatusBadge(studentStatusLabel(student) || statusLabel);
+  const teamCell = teamLabelVisible() ? '<span>' + esc(student.team.id) + '</span>' : "";
+  if (dropout) {
+    return [
+      '<div class="matrix-row matrix-muted matrix-status-row' + (teamLabelVisible() ? '' : ' matrix-no-team') + '">',
+        '<span class="matrix-rank matrix-rank-status">-</span>',
+        '<strong>' + esc(student.maskedName) + statusBadge + '</strong>',
+        teamCell,
+        matrixStatusValue(studentStatusLabel(student) || "미응시"),
+        matrixStatusValue("미응시"),
+        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue("미응시") + '</div>',
+      '</div>'
+    ].join("");
+  }
+
+  if (projectMissing) {
+    return [
+      '<div class="matrix-row matrix-muted matrix-missing-row' + (teamLabelVisible() ? '' : ' matrix-no-team') + '">',
+        '<span class="matrix-rank">' + esc(index + 1) + '</span>',
+        '<strong>' + esc(student.maskedName) + statusBadge + '</strong>',
+        teamCell,
+        '<span>' + esc(scoreLabel(student.final)) + '</span>',
+        matrixStatusValue("미응시"),
+        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue("미응시") + '</div>',
+      '</div>'
+    ].join("");
+  }
+
+  const fit = numericScore(student.fit);
   const fitTone = fit >= 93 ? "teal" : fit >= 90 ? "blue" : fit >= 85 ? "amber" : "coral";
   const width = Math.max(0, Math.min(100, fit));
   return [
-    '<div class="matrix-row matrix-' + fitTone + '">',
+    '<div class="matrix-row matrix-' + fitTone + (teamLabelVisible() ? '' : ' matrix-no-team') + '">',
       '<span class="matrix-rank">' + esc(index + 1) + '</span>',
-      '<strong>' + esc(student.maskedName) + '</strong>',
-      '<span>' + esc(student.team.id) + '</span>',
+      '<strong>' + esc(student.maskedName) + statusBadge + '</strong>',
+      teamCell,
       '<span>' + esc(scoreLabel(student.final)) + '</span>',
       '<span>' + esc(scoreLabel(summaryProject1Score(student))) + '</span>',
       '<div class="matrix-fit"><i style="width:' + width + '%"></i><b>' + esc(percentLabel(student.fit)) + '</b></div>',
@@ -255,7 +424,7 @@ function renderTeamSummary(team, roster) {
       '<div class="summary-team-score">',
         '<span>협업 평균 ' + esc(scoreLabel(avgCollaboration)) + '</span>',
         '<span>본평가 평균 ' + esc(scoreLabel(avgFinal)) + '</span>',
-        '<span>프로젝트1 평균 ' + esc(scoreLabel(avgProject)) + '</span>',
+        '<span>' + esc(projectScoreLabel()) + ' 평균 ' + esc(scoreLabel(avgProject)) + '</span>',
       '</div>',
       '<div class="summary-team-members">' + memberNames + '</div>',
       teamEvidence(team),
@@ -264,7 +433,7 @@ function renderTeamSummary(team, roster) {
 }
 
 function teacherSummaryItems() {
-  return [
+  return cfg.teacherSummaryItems || [
     "벡터 드로잉과 편집 툴 운용은 반복 숙련과 시간 관리가 성취도를 가르는 핵심 항목입니다.",
     "InDesign, 전자책, AI 제작은 기획 의도와 그리드/타이포그래피/출력 전 점검을 함께 설명하면 설득력이 높습니다.",
     "프로젝트1은 수원시 시정소식지 재해석 과제로 MZ 타깃, 공공기관 톤, 팀 협업 산출물 완성도를 종합 확인했습니다."
@@ -273,7 +442,11 @@ function teacherSummaryItems() {
 
 function renderSummaryPage() {
   const active = activeStudents();
-  const dropouts = students.filter((student) => student.status === "중탈");
+  const dropouts = students.filter(isDropoutStudent);
+  const statusOnlyRows = students.filter((student) => isProjectMissingStudent(student) || isDropoutStudent(student));
+  const scoredRows = active.filter((student) => !isProjectMissingStudent(student)).sort((a, b) => numericScore(b.fit) - numericScore(a.fit));
+  const missingRows = active.filter(isProjectMissingStudent);
+  const dropoutRows = students.filter(isDropoutStudent);
   const finalAvg = averageFor(active, "final");
   const fitAvg = averageFor(active, "fit");
   const projectAvg = averageFor(active, "project");
@@ -281,17 +454,18 @@ function renderSummaryPage() {
   const attendedDays = sumFor(active, "attendedDays");
   const totalDays = sumFor(active, "totalDays");
   const attendanceRate = totalDays ? attendedDays / totalDays * 100 : null;
-  const highFit = active.filter((student) => !isMissing(student.fit) && student.fit >= 90);
-  const growthFocusStudents = active.filter((student) => student.group === "성장관리" || student.group === "참여안정" || student.final < 80 || student.fit < 85);
-  const matrix = [...active].sort((a, b) => Number(b.fit || 0) - Number(a.fit || 0));
-  const recommendedLine = matrix.slice(0, 3).map((student) => student.maskedName + " " + student.fit + "%").join("<br>");
-  const riskLine = [
-    ...dropouts.map((student) => student.name + " 중도탈락"),
-    ...growthFocusStudents.map((student) => student.maskedName + " " + student.group)
-  ].join(" · ") || "추가 확인 대상 없음";
+  const highFit = scoredRows.filter((student) => !isMissing(student.fit) && student.fit >= 90);
+  const growthFocusStudents = scoredRows.filter((student) => student.group === "성장관리" || student.group === "참여안정" || student.final < 80 || student.fit < 85);
+  const matrix = [...scoredRows, ...missingRows, ...dropoutRows];
+  const recommendedLine = scoredRows.slice(0, 3).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>");
+  const highFitLine = highFit.slice(0, 6).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>") || "90% 이상 후보 없음";
+  const statusLine = statusOnlyRows.map((student) => esc(student.maskedName) + " " + esc(summaryStatusDetail(student))).join("<br>") || "상태 특이사항 없음";
+  const focusLine = Array.isArray(cfg.summaryFocusItems)
+    ? cfg.summaryFocusItems.map(esc).join("<br>")
+    : growthFocusStudents.slice(0, 4).map((student) => esc(student.maskedName) + " " + esc(student.group)).join("<br>") || "추가 관리군 없음";
 
   return [
-    '<section class="report-page summary-page" data-page="summary">',
+    '<section class="report-page summary-page' + (teamSummaryVisible() ? '' : ' summary-no-team') + '" data-page="summary">',
       '<div class="summary-header">',
         '<div class="summary-title">',
           '<h1>훈련생 성장 대시보드 종합</h1>',
@@ -307,29 +481,28 @@ function renderSummaryPage() {
             summaryMetric("본(재)평가 평균", scoreLabel(finalAvg), "재평가 원점수 기준", finalAvg >= 88 ? "teal" : "blue"),
             summaryMetric("통합 출석률", isMissing(attendanceRate) ? "-" : one(attendanceRate) + "%", "총 80시간", attendanceRate >= 96 ? "teal" : "blue"),
             summaryMetric("채용 적합도", isMissing(fitAvg) ? "-" : one(fitAvg) + "%", highFit.length + "명 90% 이상", fitAvg >= 90 ? "teal" : "blue"),
-            summaryMetric("프로젝트1 평균", scoreLabel(project1Avg), "참여도 평균 " + one(projectAvg) + "점", project1Avg >= 90 ? "teal" : "blue"),
+            summaryMetric(projectScoreLabel() + " 평균", scoreLabel(project1Avg), "참여도 평균 " + one(projectAvg) + "점", project1Avg >= 90 ? "teal" : "blue"),
           '</div>',
           '<section class="summary-panel matrix-panel">',
-            '<div class="section-title"><h3>종합성과</h3><span>중탈 제외 통계 · 적합도 기준 정렬</span></div>',
-            '<div class="matrix-head"><span>순위</span><span>훈련생</span><span>팀</span><span>본평가</span><span>개인 프로젝트1</span><span>채용 적합도</span></div>',
+            '<div class="section-title"><h3>종합성과</h3><span>중탈 제외 통계 · 표는 상태 태그 포함</span></div>',
+            '<div class="matrix-head' + (teamLabelVisible() ? '' : ' matrix-no-team') + '"><span>순위</span><span>훈련생</span>' + (teamLabelVisible() ? '<span>팀</span>' : '') + '<span>본평가</span><span>개인 ' + esc(projectScoreLabel()) + '</span><span>채용 적합도</span></div>',
             '<div class="matrix-list">' + matrix.map(renderMatrixRow).join("") + '</div>',
           '</section>',
         '</section>',
         '<aside class="summary-aside">',
           '<section class="summary-panel insight-panel">',
             '<div class="section-title"><h3>기업 맞춤 인재 추천</h3></div>',
-            '<div class="insight-stack">',
-              '<div><strong>' + esc(highFit.length) + '명</strong><span>채용 적합도</span><em>90% 이상</em></div>',
-              '<div class="insight-combo"><strong>3명</strong><span>채용 적합도 상위</span><b>' + recommendedLine + '</b></div>',
+            '<div class="insight-stack insight-stack-rich">',
+              '<div class="insight-card insight-card-hero"><span>채용 적합도</span><strong>' + esc(highFit.length) + '명</strong><em>90% 이상 후보군</em><b>' + highFitLine + '</b></div>',
+              '<div class="insight-card insight-card-list"><span>상위 추천</span><strong>TOP 3</strong><b>' + recommendedLine + '</b></div>',
+              '<div class="insight-card insight-card-muted"><span>상태 표기</span><strong>' + esc(statusOnlyRows.length) + '명</strong><b>' + statusLine + '</b></div>',
+              '<div class="insight-card insight-card-note"><span>검토 포인트</span><strong>' + esc(projectScoreLabel()) + '</strong><em>개인 산출물 중심</em><b>' + focusLine + '</b></div>',
             '</div>',
           '</section>',
-          '<section class="summary-panel team-summary-panel">',
-            '<div class="section-title"><h3>팀별 산출물</h3></div>',
-            '<div class="summary-teams">' + cfg.teams.map((team) => renderTeamSummary(team, active)).join("") + '</div>',
-          '</section>',
+          teamSummaryVisible() ? '<section class="summary-panel team-summary-panel"><div class="section-title"><h3>팀별 산출물</h3></div><div class="summary-teams">' + cfg.teams.map((team) => renderTeamSummary(team, active)).join("") + '</div></section>' : '',
         '</aside>',
       '</div>',
-      '<footer class="page-footer">그린컴퓨터아카데미 수원 · (주)더페이퍼</footer>',
+      '<footer class="page-footer">' + esc(reportFooter()) + '</footer>',
     '</section>'
   ].join("");
 }
@@ -390,20 +563,23 @@ function teamAggregateOpinion(student) {
 
 function combinedTeacherOpinion(student) {
   const personal = projectAlignedText(student.teacherOpinion || student.insights.teacher, student);
-  const team = projectAlignedText(teamAggregateOpinion(student), student);
-  const unit = cfg.project1UnitSummaryOpinion || "";
+  const team = teamPanelVisible() ? projectAlignedText(teamAggregateOpinion(student), student) : "";
+  const unit = cfg.projectUnitSummaryOpinion || cfg.project1UnitSummaryOpinion || "";
   return [personal, team, unit].filter(Boolean).join(" ");
 }
 
 function radarAxes(student) {
-  return [
+  const axes = [
     { label: "사전진단", value: student.diagnostic },
     { label: "본평가", value: student.final },
     { label: "SELF CHECK", value: student.selfCheck },
-    { label: "프로젝트1", value: summaryProject1Score(student) },
-    { label: "협업", value: avgScore([student.peer, student.selfEval, student.instructorEval]) },
+    { label: projectScoreLabel(), value: summaryProject1Score(student) },
     { label: "출석", value: student.attendance }
   ];
+  if (collaborationMetricsVisible()) {
+    axes.splice(4, 0, { label: "협업", value: avgScore([student.peer, student.selfEval, student.instructorEval]) });
+  }
+  return axes;
 }
 
 function radarPoint(index, count, radius, center = 160) {
@@ -442,11 +618,11 @@ function radarChart(student) {
     return radarPoint(index, axes.length, maxRadius * value / 100, center);
   });
   const dots = dataPoints.map((point) => '<circle class="radar-dot" cx="' + one(point.x) + '" cy="' + one(point.y) + '" r="4.6"></circle>').join("");
-  const status = student.status === "중탈" ? "중탈 학생은 개별 통계 참고용" : "6개 성과 지표 100점 환산";
+  const status = student.status === "중탈" ? "중탈 학생은 개별 통계 참고용" : axes.length + "개 성과 지표 100점 환산";
 
   return [
     '<div class="radar-card">',
-      '<div class="radar-head"><strong>성과 지표 6개 레이더</strong><span>' + esc(status) + '</span></div>',
+      '<div class="radar-head"><strong>성과 지표 레이더</strong><span>' + esc(status) + '</span></div>',
       '<svg class="radar-svg" viewBox="0 0 320 320" role="img" aria-label="' + esc(student.name) + ' 성과 지표 6개 레이더 차트">',
         grid,
         spokes,
@@ -459,14 +635,15 @@ function radarChart(student) {
 }
 
 function pageHeader(student, pageLabel) {
+  const context = [cfg.projectName, teamLabelVisible() ? student.team.id : ""].filter(Boolean).join(" / ");
   return `
     <div class="page-header">
       <div class="header-copy">
-        <h1>개인별 훈련생 성과 리포트</h1>
+        <h1>${esc(cfg.reportTitle || "개인별 훈련생 성과 리포트")}</h1>
       </div>
       <div class="page-mark">
         <strong>${esc(pageLabel === "1P" ? "개인성적표" : pageLabel === "2P" ? "개인피드백" : pageLabel)}</strong>
-        <span>${esc(cfg.projectName)} / ${esc(student.team.id)}</span>
+        <span>${esc(context)}</span>
       </div>
     </div>
   `;
@@ -476,7 +653,8 @@ function renderPageOne(student) {
   const projectTone = (summaryProject1Score(student) ?? student.project) >= 91 ? "teal" : (summaryProject1Score(student) ?? student.project) >= 85 ? "blue" : "amber";
   const fitTone = isMissing(student.fit) ? "coral" : student.fit >= 92 ? "teal" : student.fit >= 88 ? "blue" : "coral";
   return `
-    <section class="report-page page-one" data-page="1" data-student="${esc(student.name)}">
+    <section class="report-page page-one ${teamPanelVisible() ? "" : "page-one-no-team"}${feedbackReviewClass(student)}" data-page="1" data-student="${esc(student.name)}">
+      ${feedbackExcludedPostit(student)}
       ${pageHeader(student, "1P")}
       <div class="page-one-grid">
         <section class="identity-panel">
@@ -490,7 +668,7 @@ function renderPageOne(student) {
             <div class="mini-summary">
               <span>사전평가 ${one(student.pre)}</span>
               <span>본평가 ${one(student.final)}</span>
-              <span>프로젝트1 ${one(summaryProject1Score(student))}</span>
+              <span>${esc(projectScoreLabel())} ${one(summaryProject1Score(student))}</span>
               <span>성장 ${signed(student.growth)}</span>
             </div>
           </div>
@@ -504,7 +682,7 @@ function renderPageOne(student) {
           <div class="metric-grid">
             ${metric("본(재)평가", scoreLabel(student.final), `사전 대비 ${signed(student.growth)}`, isMissing(student.final) ? "coral" : student.final >= 88 ? "teal" : student.final >= 80 ? "blue" : "coral")}
             ${metric("채용 적합도", percentLabel(student.fit), "종합 산식", fitTone)}
-            ${metric("프로젝트1 평가", scoreLabel(summaryProject1Score(student)), student.project1Note || "개인 평가의견서", projectTone)}
+            ${metric(projectScoreLabel() + " 평가", scoreLabel(summaryProject1Score(student)), student.projectNote || student.project2Note || student.project1Note || projectScoreMeta(), projectTone)}
             ${metric("출석", percentLabel(student.attendance), `${student.attendedDays}/${student.totalDays}일`, student.attendance >= 95 ? "teal" : student.attendance >= 90 ? "blue" : "coral")}
           </div>
           <div class="competency-grid">
@@ -513,8 +691,8 @@ function renderPageOne(student) {
               ${bar("사전진단", student.diagnostic)}
               ${bar("본(재)평가", student.final)}
               ${bar("SELF CHECK", student.selfCheck)}
-              ${bar("프로젝트1", summaryProject1Score(student))}
-              ${bar("협업 평균", avgScore([student.peer, student.selfEval, student.instructorEval]))}
+              ${bar(projectScoreLabel(), summaryProject1Score(student))}
+              ${collaborationMetricsVisible() ? bar("협업 평균", avgScore([student.peer, student.selfEval, student.instructorEval])) : ""}
               ${bar("출석", student.attendance)}
             </div>
           </div>
@@ -524,7 +702,7 @@ function renderPageOne(student) {
           </div>
         </section>
 
-        <aside class="team-panel" data-context="${attr(cfg.projectName + " / " + student.team.id)}">
+        ${teamPanelVisible() ? `<aside class="team-panel" data-context="${attr(cfg.projectName + " / " + student.team.id)}">
           <div class="section-title">
             <h3>${esc(student.team.id)} 팀 정보</h3>
           </div>
@@ -541,9 +719,9 @@ function renderPageOne(student) {
             <strong>${esc(cfg.instructors.join(", "))}</strong>
             <p>${esc(teamAggregateOpinion(student))}</p>
           </div>
-        </aside>
+        </aside>` : ""}
       </div>
-      <footer class="page-footer">그린컴퓨터아카데미 수원 · (주)더페이퍼</footer>
+      <footer class="page-footer">${esc(reportFooter())}</footer>
     </section>
   `;
 }
@@ -780,18 +958,22 @@ function collectFeedbackPayload(form) {
   const submittedAt = new Date().toISOString();
   const feedback = ((page || form).querySelector(".feedback-lines textarea") || {}).value || "";
   const studentUrl = studentPageUrl(student);
+  const projectFieldName = cfg.projectScoreFieldName || "프로젝트1";
+  const projectScore = isMissing(summaryProject1Score(student)) ? "" : one(summaryProject1Score(student));
   const ratings = {};
   cfg.feedbackItems.forEach((item, index) => {
     ratings[item] = selectedRatingValue(form, student, index);
   });
-  return {
+  const payload = {
     submittedAt,
     student: student.name,
     maskedName: student.maskedName,
     team: student.team.id,
     company: student.team.company || cfg.companyName,
     finalScore: isMissing(student.final) ? "" : one(student.final),
-    project1Score: isMissing(summaryProject1Score(student)) ? "" : one(summaryProject1Score(student)),
+    project1Score: projectScore,
+    projectScore,
+    projectName: cfg.projectName || "",
     fit: isMissing(student.fit) ? "" : student.fit,
     ratings,
     feedback,
@@ -806,7 +988,7 @@ function collectFeedbackPayload(form) {
     "팀": student.team.id,
     "기업": student.team.company || cfg.companyName,
     "본(재)평가": isMissing(student.final) ? "" : one(student.final),
-    "프로젝트1": isMissing(summaryProject1Score(student)) ? "" : one(summaryProject1Score(student)),
+    "프로젝트1": projectScore,
     "채용적합도": isMissing(student.fit) ? "" : student.fit,
     "종합 피드백": feedback,
     "기업 메모": "",
@@ -814,6 +996,8 @@ function collectFeedbackPayload(form) {
     "테마": document.body.dataset.theme || "white",
     "페이지URL": studentUrl
   };
+  payload[projectFieldName] = projectScore;
+  return payload;
 }
 
 async function submitFeedback(form) {
@@ -1101,6 +1285,18 @@ function renderCoverSelectionTeam(team) {
 }
 
 function renderCoverSelectionPage() {
+  if (!coverSelectionVisible()) {
+    return `
+      <section class="report-page cover-selection-page cover-selection-disabled" data-page="cover-selection-disabled">
+        <div class="cover-selection-disabled-message">
+          <p class="eyebrow">기업 회신용</p>
+          <h1>${esc(cfg.projectName)} 표지 선정 없음</h1>
+          <p>이 프로젝트는 개인별 피드백·멘토링만 운영합니다.</p>
+        </div>
+        <footer class="page-footer">${esc(reportFooter())}</footer>
+      </section>
+    `;
+  }
   const isReviewMode = Boolean(coverReviewTeamParam());
   const teams = coverReviewTeams();
   return `
@@ -1120,7 +1316,7 @@ function renderCoverSelectionPage() {
           ${teams.map((team) => renderCoverSelectionTeam(team)).join("")}
         </div>
       </form>
-      <footer class="page-footer">그린컴퓨터아카데미 수원 · (주)더페이퍼</footer>
+      <footer class="page-footer">${esc(reportFooter())}</footer>
     </section>
   `;
 }
@@ -1128,7 +1324,8 @@ function renderCoverSelectionPage() {
 function renderPageTwo(student) {
   const studentKey = formStudentKey(student);
   return `
-    <section class="report-page page-two" data-page="2" data-student="${esc(student.name)}" data-student-key="${attr(studentKey)}">
+    <section class="report-page page-two${feedbackReviewClass(student)}" data-page="2" data-student="${esc(student.name)}" data-student-key="${attr(studentKey)}">
+      ${feedbackExcludedPostit(student)}
       ${pageHeader(student, "2P")}
       <div class="feedback-top">
         <section class="comment-card strength-card">
@@ -1190,18 +1387,69 @@ function renderPageTwo(student) {
           </div>
         </aside>
       </div>
-      <footer class="page-footer">그린컴퓨터아카데미 수원 · (주)더페이퍼</footer>
+      <footer class="page-footer">${esc(reportFooter())}</footer>
     </section>
   `;
+}
+
+function excludedFeedbackLabel(student) {
+  return studentStatusLabel(student) || summaryStatusLabel(student) || "미응시";
+}
+
+function excludedFeedbackSubLabel(student) {
+  if (isDropoutStudent(student)) return "중도탈락 · 피드백 비대상";
+  if (isProjectMissingStudent(student)) return projectScoreLabel() + " 미응시 · 피드백 비대상";
+  return "피드백 비대상";
+}
+
+function feedbackExcludedPostit(student) {
+  if (!adminModeEnabled() || !feedbackPageHidden(student)) return "";
+  return [
+    '<div class="feedback-excluded-postit" aria-label="상태 메모">',
+      '<span>관리자 확인</span>',
+      '<strong>' + esc(excludedFeedbackLabel(student)) + '</strong>',
+      '<em>' + esc(student.maskedName) + ' · ' + esc(excludedFeedbackSubLabel(student)) + '</em>',
+    '</div>'
+  ].join("");
+}
+
+function renderHiddenFeedbackPage(student, pageClass = "page-two", pageNumber = "2") {
+  const studentKey = formStudentKey(student);
+  const label = excludedFeedbackLabel(student);
+  return `
+    <section class="report-page ${esc(pageClass)} feedback-excluded-page" data-page="${esc(pageNumber)}" data-feedback-hidden="true" data-student="${esc(student.name)}" data-student-key="${attr(studentKey)}">
+      <div class="feedback-excluded-mask">
+        <div class="feedback-excluded-card">
+          <span>기업 피드백 제외</span>
+          <strong>${esc(label)}</strong>
+          <em>${esc(student.maskedName)} · ${esc(projectScoreLabel())} 피드백 비대상</em>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderFeedbackPage(student) {
+  return feedbackPageHidden(student) && !adminModeEnabled() ? renderHiddenFeedbackPage(student) : renderPageTwo(student);
+}
+
+function renderAllReportPages() {
+  const displayed = reportStudents();
+  const displayedKeys = new Set(displayed.map(formStudentKey));
+  const hiddenOnly = adminModeEnabled()
+    ? []
+    : students.filter((student) => !displayedKeys.has(formStudentKey(student)) && feedbackPageHidden(student));
+  return displayed.map((student) => renderPageOne(student) + renderFeedbackPage(student)).join("")
+    + hiddenOnly.map(renderHiddenFeedbackPage).join("");
 }
 
 function renderStudent(student) {
   const view = viewSelect.value;
   if (view === "summary") return renderSummaryPage();
   if (view === "page1") return renderPageOne(student);
-  if (view === "page2") return renderPageTwo(student);
+  if (view === "page2") return renderFeedbackPage(student);
   if (view === "cover") return renderCoverSelectionPage();
-  return renderPageOne(student) + renderPageTwo(student);
+  return renderPageOne(student) + renderFeedbackPage(student);
 }
 
 function selectedStudent() {
@@ -1225,7 +1473,7 @@ function render() {
   if (view === "summary") {
     deck.innerHTML = renderSummaryPage();
   } else if (view === "all") {
-    deck.innerHTML = renderSummaryPage() + reportStudents().map((student) => renderPageOne(student) + renderPageTwo(student)).join("") + renderCoverSelectionPage();
+    deck.innerHTML = renderSummaryPage() + renderAllReportPages() + (coverSelectionVisible() ? renderCoverSelectionPage() : "");
   } else if (view === "cover") {
     deck.innerHTML = renderCoverSelectionPage();
   } else {
@@ -1279,7 +1527,7 @@ function handleStudentSelectChange() {
 function initControls() {
   const students = reportStudents();
   studentSelect.innerHTML = students.map((student) => `
-    <option value="${studentOptionValue(student)}">${esc(student.name)} (${esc(student.team.id)})</option>
+    <option value="${studentOptionValue(student)}">${esc(teamLabelVisible() ? student.name + " (" + student.team.id + ")" : student.name)}</option>
   `).join("");
   if (students.length) studentSelect.value = studentOptionValue(students[0]);
 
@@ -1289,7 +1537,9 @@ function initControls() {
   if (matched) studentSelect.value = studentOptionValue(matched);
 
   const viewParam = params.get("view");
-  if (["summary", "both", "page1", "page2", "all", "cover"].includes(viewParam)) viewSelect.value = viewParam;
+  const allowedViews = coverSelectionVisible() ? ["summary", "both", "page1", "page2", "all", "cover"] : ["summary", "both", "page1", "page2", "all"];
+  if (allowedViews.includes(viewParam)) viewSelect.value = viewParam;
+  if (viewParam === "cover" && !coverSelectionVisible()) viewSelect.value = "all";
   applyTheme(params.get("theme"), false);
 
   studentSelect.addEventListener("change", handleStudentSelectChange);
