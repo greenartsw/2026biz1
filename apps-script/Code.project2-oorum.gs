@@ -917,13 +917,13 @@ function ensureStudentAccessToken_(sheet, row, values) {
 function buildStudentAccessUrl_(token) {
   const serviceUrl = ScriptApp.getService().getUrl();
   if (!serviceUrl) throw new Error('웹앱 배포 URL을 확인할 수 없습니다. 새 배포 후 다시 시도하세요.');
-  return `${serviceUrl}?token=${encodeURIComponent(token)}`;
+  return `${serviceUrl}?authuser=0&token=${encodeURIComponent(token)}`;
 }
 
 function buildStudentCoverAccessUrl_(token, team) {
   const serviceUrl = ScriptApp.getService().getUrl();
   if (!serviceUrl) throw new Error('웹앱 배포 URL을 확인할 수 없습니다. 새 배포 후 다시 시도하세요.');
-  return `${serviceUrl}?token=${encodeURIComponent(token)}&view=cover&coverTeam=${encodeURIComponent(team || '')}`;
+  return `${serviceUrl}?authuser=0&token=${encodeURIComponent(token)}&view=cover&coverTeam=${encodeURIComponent(team || '')}`;
 }
 
 function buildSecureStudentHtml_(token, params) {
