@@ -11,6 +11,7 @@ const CONFIG = {
   scoreSheetName: '프로젝트2 평가결과',
   scoreSheetAliases: [],
   reportBaseUrl: 'https://greenartsw.github.io/2026biz1/student-report-html/index2.html',
+  releaseRedirectBaseUrl: 'https://greenartsw.github.io/2026biz1/student-report-html/token-redirect.html',
   courseName: '[기맞1차]출판&광고',
   projectName: '프로젝트2',
   viewDeadline: '2026.08.12',
@@ -102,6 +103,7 @@ function doGet(e) {
   const params = (e && e.parameter) || {};
   const action = String(params.action || '');
   const callback = String(params.callback || '');
+  const token = norm_(params.token || '');
 
   if (action === 'completed') {
     const payload = safeCompletedFeedbackPayload_();
@@ -115,7 +117,18 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  const token = norm_(params.token || '');
+  if (action === 'studentReportUrl') {
+    const payload = studentReportUrlPayload_(token, params);
+    if (callback) {
+      return ContentService
+        .createTextOutput(callback + '(' + JSON.stringify(payload) + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService
+      .createTextOutput(JSON.stringify(payload))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (token) {
     return HtmlService
       .createHtmlOutput(buildSecureStudentHtml_(token, params))
@@ -917,13 +930,63 @@ function ensureStudentAccessToken_(sheet, row, values) {
 function buildStudentAccessUrl_(token) {
   const serviceUrl = ScriptApp.getService().getUrl();
   if (!serviceUrl) throw new Error('웹앱 배포 URL을 확인할 수 없습니다. 새 배포 후 다시 시도하세요.');
-  return `${serviceUrl}?authuser=0&token=${encodeURIComponent(token)}`;
+  return buildReleaseRedirectUrl_(token, { endpoint: serviceUrl });
 }
 
 function buildStudentCoverAccessUrl_(token, team) {
   const serviceUrl = ScriptApp.getService().getUrl();
   if (!serviceUrl) throw new Error('웹앱 배포 URL을 확인할 수 없습니다. 새 배포 후 다시 시도하세요.');
-  return `${serviceUrl}?authuser=0&token=${encodeURIComponent(token)}&view=cover&coverTeam=${encodeURIComponent(team || '')}`;
+  return buildReleaseRedirectUrl_(token, { endpoint: serviceUrl, view: 'cover', coverTeam: team || '' });
+}
+
+function buildReleaseRedirectUrl_(token, options) {
+  const redirectBaseUrl = norm_(CONFIG.releaseRedirectBaseUrl);
+  const endpoint = options && options.endpoint ? options.endpoint : ScriptApp.getService().getUrl();
+  if (!redirectBaseUrl) {
+    const serviceUrl = endpoint || ScriptApp.getService().getUrl();
+    return `${serviceUrl}?authuser=0&token=${encodeURIComponent(token)}`;
+  }
+  const query = [
+    `token=${encodeURIComponent(token)}`,
+    `endpoint=${encodeURIComponent(endpoint)}`
+  ];
+  if (options && options.view) query.push(`view=${encodeURIComponent(options.view)}`);
+  if (options && options.coverTeam) query.push(`coverTeam=${encodeURIComponent(options.coverTeam)}`);
+  const separator = redirectBaseUrl.indexOf('?') === -1 ? '?' : '&';
+  return `${redirectBaseUrl}${separator}${query.join('&')}`;
+}
+
+function studentReportUrlPayload_(token, params) {
+  if (!token) return { ok: false, error: '접근 토큰이 없습니다.' };
+
+  const sheet = getFeedbackSheet_();
+  ensureReleaseColumns_(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return { ok: false, error: '접근 가능한 피드백 정보가 없습니다.' };
+
+  const roster = getRosterMap_();
+  const scoreMap = getScoreMap_();
+  const values = sheet.getRange(2, 1, lastRow - 1, CONFIG.feedbackColumns.releaseTokenCreatedAt).getDisplayValues();
+
+  for (let index = 0; index < values.length; index += 1) {
+    const rowValues = values[index];
+    if (cell_(rowValues, CONFIG.feedbackColumns.releaseToken) !== token) continue;
+
+    const item = buildDashboardRow_(rowValues, index + 2, roster, scoreMap);
+    const releaseStatus = item.releaseStatus;
+    if (![CONFIG.status.studentDone, CONFIG.status.studentTestDone].includes(releaseStatus)) {
+      return { ok: false, error: '아직 학생 열람이 오픈되지 않았습니다.' };
+    }
+
+    return {
+      ok: true,
+      trainee: item.trainee,
+      maskedName: item.maskedName,
+      reportUrl: studentReportAccessUrl_(item, params || {})
+    };
+  }
+
+  return { ok: false, error: '유효하지 않은 접근 링크입니다.' };
 }
 
 function buildSecureStudentHtml_(token, params) {
@@ -953,12 +1016,16 @@ function buildSecureStudentHtml_(token, params) {
 }
 
 function buildStudentReportFrameHtml_(item, params) {
-  const view = norm_(params && params.view);
-  const baseUrl = view === 'cover' ? buildCoverReviewReportUrl_(item.team) : (item.studentReportUrl || buildStudentReportUrl_(item.maskedName || item.trainee));
-  const reportUrl = withFeedbackEndpoint_(baseUrl);
+  const reportUrl = studentReportAccessUrl_(item, params || {});
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${html_(item.trainee)} 피드백/멘토링 결과</title><style>
 html,body{margin:0;width:100%;height:100%;background:#dce6f2;overflow:hidden}.student-frame{display:block;width:100%;height:100vh;border:0;background:#fff}
 </style></head><body><iframe class="student-frame" src="${html_(reportUrl)}" title="${html_(item.trainee)} 피드백/멘토링 결과"></iframe></body></html>`;
+}
+
+function studentReportAccessUrl_(item, params) {
+  const view = norm_(params && params.view);
+  const baseUrl = view === 'cover' ? buildCoverReviewReportUrl_(item.team) : (item.studentReportUrl || buildStudentReportUrl_(item.maskedName || item.trainee));
+  return withFeedbackEndpoint_(baseUrl);
 }
 
 function buildCoverReviewReportUrl_(team) {

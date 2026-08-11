@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>결과 열람 링크 확인</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Arial, "Malgun Gothic", sans-serif;
+      color: #172033;
+      background: #f4f7fb;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    main {
+      width: min(520px, 100%);
+      background: #fff;
+      border: 1px solid #d9e2ef;
+      border-radius: 8px;
+      padding: 24px;
+      box-sizing: border-box;
+      box-shadow: 0 10px 28px rgba(15, 59, 122, .08);
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      line-height: 1.35;
+    }
+    p {
+      margin: 0;
+      color: #475467;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .error {
+      color: #b42318;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>결과 열람 링크를 확인하고 있습니다</h1>
+    <p id="status">잠시만 기다려주세요.</p>
+  </main>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var token = params.get("token") || "";
+      var endpoint = params.get("endpoint") || "https://script.google.com/macros/s/AKfycbx_SA7t94i_5Ks06YCT62RxJOYpDNEMGRrFnkwc7pcxJIo298uvi5KaJagnfWP0whYi3w/exec";
+      var status = document.getElementById("status");
+      var callbackName = "__project2TokenRedirect_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+      var timer = null;
+
+      function showError(message) {
+        if (timer) window.clearTimeout(timer);
+        status.className = "error";
+        status.textContent = message || "링크 확인에 실패했습니다. 주소를 복사해 시크릿 창에서 다시 열어주세요.";
+        try { delete window[callbackName]; } catch (error) { window[callbackName] = undefined; }
+      }
+
+      if (!token) {
+        showError("접근 토큰이 없습니다. 메일의 결과 열람 링크를 다시 눌러주세요.");
+        return;
+      }
+
+      window[callbackName] = function (payload) {
+        if (!payload || !payload.ok || !payload.reportUrl) {
+          showError((payload && payload.error) || "유효하지 않은 접근 링크입니다.");
+          return;
+        }
+        location.replace(payload.reportUrl);
+      };
+
+      var url = new URL(endpoint);
+      url.searchParams.set("action", "studentReportUrl");
+      url.searchParams.set("token", token);
+      url.searchParams.set("callback", callbackName);
+      url.searchParams.set("authuser", "0");
+      if (params.get("view")) url.searchParams.set("view", params.get("view"));
+      if (params.get("coverTeam")) url.searchParams.set("coverTeam", params.get("coverTeam"));
+
+      var script = document.createElement("script");
+      script.src = url.toString();
+      script.onerror = function () {
+        showError("Apps Script 응답을 불러오지 못했습니다. 주소를 복사해 시크릿 창에서 다시 열어주세요.");
+      };
+      timer = window.setTimeout(function () {
+        showError("링크 확인 시간이 초과되었습니다. 주소를 복사해 시크릿 창에서 다시 열어주세요.");
+      }, 12000);
+      document.head.appendChild(script);
+    }());
+  </script>
+</body>
+</html>
