@@ -13,7 +13,8 @@ const CONFIG = {
   reportBaseUrl: 'https://greenartsw.github.io/2026biz1/student-report-html/index2.html',
   courseName: '[기맞1차]출판&광고',
   projectName: '프로젝트2',
-  viewDeadline: '2026.08.06 이후 별도 안내',
+  viewDeadline: '2026.08.12',
+  nextProjectOpenNotice: '프로젝트3 성적 URL 열람은 2026.08.17 이후 오픈됩니다.',
   feedbackColumns: {
     submittedAt: 1,
     trainee: 2,
@@ -834,13 +835,22 @@ function selectedCoverForItem_(item) {
 function displayTeamLabel_(team) {
   return norm_(team).replace(/^팀(\d+)$/, '$1팀') || '해당 팀';
 }
+function releaseNoticeLines_() {
+  return [
+    `성적 URL 열람 기간은 ${CONFIG.viewDeadline} 까지입니다.`,
+    CONFIG.nextProjectOpenNotice
+  ].filter(Boolean);
+}
+function releaseNoticeHtml_() {
+  return releaseNoticeLines_().map(line => html_(line)).join('<br>');
+}
 function releaseHtmlBody_(item, realRecipient, accessUrl, coverAccessUrl, testOnly) {
   const cover = selectedCoverForItem_(item);
   const coverUrl = cover && cover.coverUrl ? cover.coverUrl : '';
   const coverButton = cover && coverAccessUrl ? `<a href="${html_(coverAccessUrl)}" style="display:inline-block;background:#0f766e;color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:8px;margin-left:8px;margin-top:8px">선정된 ${html_(displayTeamLabel_(item.team))} 표지 열기</a>` : '';
   const coverFallback = cover && coverAccessUrl ? `<br>선정 표지 URL: ${html_(coverAccessUrl)}` : '';
   const testNotice = testOnly === true ? `<div style="margin:18px 0 0;padding:12px 14px;border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;border-radius:8px;font-size:13px;line-height:1.6"><strong>[테스트 모드]</strong><br>실제 훈련생 수신자: ${html_(realRecipient)}<br>테스트 수신자: ${html_(CONFIG.testRecipient)}<br>정식 릴리즈 전까지 훈련생에게는 발송되지 않습니다.</div>` : '';
-  return `<!doctype html><html lang="ko"><body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,'Malgun Gothic',sans-serif;color:#172033"><div style="max-width:640px;margin:0 auto;padding:24px 14px"><div style="background:#fff;border:1px solid #d9e2ef;border-radius:12px;overflow:hidden"><div style="padding:20px 22px;background:#0f3b7a;color:#fff"><div style="font-size:13px;opacity:.9">${html_(CONFIG.courseName)} · ${html_(CONFIG.projectName)}</div><h1 style="margin:8px 0 0;font-size:20px;line-height:1.35">훈련생 평가결과 및 기업 현장전문가 피드백/멘토링 열람 안내</h1></div><div style="padding:22px"><p style="margin:0 0 14px;font-size:15px;line-height:1.7"><strong>${html_(item.trainee)} 훈련생님, 안녕하세요.</strong><br>${html_(CONFIG.courseName)} ${html_(CONFIG.projectName)} 결과 열람 링크를 안내드립니다.</p><p style="margin:18px 0 8px"><a href="${html_(accessUrl)}" style="display:inline-block;background:#1455c0;color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:8px;margin-top:8px">결과 열람 링크 열기</a>${coverButton}</p><p style="margin:8px 0 0;font-size:12px;line-height:1.6;color:#667085;word-break:break-all">버튼이 열리지 않으면 아래 주소를 복사해 접속하세요.<br>결과 열람 URL: ${html_(accessUrl)}${coverFallback}</p>${testNotice}<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;color:#475467;font-size:13px;line-height:1.7">성적 URL 열람 기간은 ${html_(CONFIG.viewDeadline)}까지입니다.<br>이의 또는 문의가 있을 경우 강사님 또는 사무실로 문의 바랍니다.</div></div></div></div></body></html>`;
+  return `<!doctype html><html lang="ko"><body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,'Malgun Gothic',sans-serif;color:#172033"><div style="max-width:640px;margin:0 auto;padding:24px 14px"><div style="background:#fff;border:1px solid #d9e2ef;border-radius:12px;overflow:hidden"><div style="padding:20px 22px;background:#0f3b7a;color:#fff"><div style="font-size:13px;opacity:.9">${html_(CONFIG.courseName)} · ${html_(CONFIG.projectName)}</div><h1 style="margin:8px 0 0;font-size:20px;line-height:1.35">훈련생 평가결과 및 기업 현장전문가 피드백/멘토링 열람 안내</h1></div><div style="padding:22px"><p style="margin:0 0 14px;font-size:15px;line-height:1.7"><strong>${html_(item.trainee)} 훈련생님, 안녕하세요.</strong><br>${html_(CONFIG.courseName)} ${html_(CONFIG.projectName)} 결과 열람 링크를 안내드립니다.</p><p style="margin:18px 0 8px"><a href="${html_(accessUrl)}" style="display:inline-block;background:#1455c0;color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:8px;margin-top:8px">결과 열람 링크 열기</a>${coverButton}</p><p style="margin:8px 0 0;font-size:12px;line-height:1.6;color:#667085;word-break:break-all">버튼이 열리지 않으면 아래 주소를 복사해 접속하세요.<br>결과 열람 URL: ${html_(accessUrl)}${coverFallback}</p>${testNotice}<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;color:#475467;font-size:13px;line-height:1.7">${releaseNoticeHtml_()}</div></div></div></div></body></html>`;
 }
 function releaseBody_(item, realRecipient, accessUrl, coverAccessUrl, testOnly) {
   const cover = selectedCoverForItem_(item);
@@ -853,7 +863,7 @@ function releaseBody_(item, realRecipient, accessUrl, coverAccessUrl, testOnly) 
     `열람 링크: ${accessUrl}`
   ];
   if (cover && coverAccessUrl) lines.push(`선정된 ${displayTeamLabel_(item.team)} 표지 링크: ${coverAccessUrl}`);
-  lines.push('', `성적 URL 열람 기간은 ${CONFIG.viewDeadline}까지입니다.`, '이의 또는 문의가 있을 경우 강사님 또는 사무실로 문의 바랍니다.');
+  lines.push('', ...releaseNoticeLines_());
   if (testOnly === true) {
     lines.push('', '[테스트 모드]', `실제 훈련생 수신자: ${realRecipient}`, `테스트 수신자: ${CONFIG.testRecipient}`, '정식 릴리즈 전까지 훈련생에게는 발송되지 않습니다.');
   }
