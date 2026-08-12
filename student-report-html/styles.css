@@ -1226,6 +1226,7 @@ body.capture .report-page { width: 100vw; border-radius: 0; box-shadow: none; }
 .admin-dock-head strong { color: var(--navy); font-size: 16px; }
 .admin-dock-head span { color: var(--muted); font-size: 12px; }
 .admin-dock-actions { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.admin-dock-actions [hidden] { display: none !important; }
 .admin-dock-actions a {
   display: inline-flex;
   align-items: center;
