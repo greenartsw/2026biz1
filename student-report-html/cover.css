@@ -106,6 +106,15 @@ body {
   font-size: 0.82em;
 }
 
+.cover-project3 .cover-title {
+  max-width: 760px;
+}
+
+.cover-project3 .cover-title h1 {
+  font-size: clamp(52px, 4.9vw, 78px);
+  line-height: 1.03;
+}
+
 .cover-entry {
   position: absolute;
   right: 8.8%;
@@ -185,6 +194,53 @@ body {
   .cover-title { max-width: 70vw; }
   .cover-footer { width: 52vw; max-width: 52vw; }
   .circle { width: 19vw; height: 19vw; }
+}
+
+@media (max-width: 600px) {
+  .cover-project3 .cover-logo {
+    width: 175px;
+    max-width: 42vw;
+  }
+
+  .cover-project3 .cover-title {
+    top: 35%;
+    gap: 2px;
+    max-width: 66vw;
+  }
+
+  .cover-project3 .cover-title p {
+    font-size: clamp(14px, 4.7vw, 22px);
+  }
+
+  .cover-project3 .cover-title h1 {
+    font-size: clamp(20px, 6vw, 30px);
+  }
+
+  .cover-project3 .cover-title h1 span {
+    white-space: normal;
+    word-break: keep-all;
+  }
+
+  .cover-project3 .cover-footer {
+    width: 58vw;
+    max-width: 58vw;
+    gap: 3px;
+  }
+
+  .cover-project3 .cover-footer strong {
+    font-size: clamp(9px, 2.7vw, 12px);
+    white-space: normal;
+  }
+
+  .cover-project3 .cover-footer span {
+    font-size: clamp(11px, 3vw, 14px);
+  }
+
+  .cover-project3 .cover-entry {
+    min-height: 22px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
 }
 
 @media print {
