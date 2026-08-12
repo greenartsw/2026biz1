@@ -30,12 +30,25 @@ function initAdminDock() {
   if (!adminDock || !enabled) return;
   adminDock.hidden = false;
   document.body.classList.add("admin-mode");
+  const title = adminDock.querySelector("[data-admin-title]");
+  const desc = adminDock.querySelector("[data-admin-desc]");
+  const projectName = cfg.projectName || "프로젝트";
+  const companyName = cfg.companyName || "기업";
+  if (title) title.textContent = `${projectName} 어드민 모드`;
+  if (desc) {
+    desc.textContent = coverSelectionVisible()
+      ? `${companyName} 기업 피드백 접수 확인 · 표지 선정 완료 후 훈련생 메일 발송`
+      : `${companyName} 기업 피드백 접수 확인 · 훈련생 결과 열람 관리`;
+  }
   if (!coverSelectionVisible()) {
     adminDock.querySelectorAll("[data-cover-link]").forEach((item) => {
       item.hidden = true;
     });
   }
   const dashboardSrc = params.get("adminEndpoint") || cfg.adminEndpoint || (adminDashboardFrame && adminDashboardFrame.dataset ? adminDashboardFrame.dataset.src : "");
+  if (adminDashboardFrame) {
+    adminDashboardFrame.title = `${projectName} 발송 어드민`;
+  }
   if (adminDashboardFrame && dashboardSrc && !adminDashboardFrame.src) {
     adminDashboardFrame.src = dashboardSrc;
   }
