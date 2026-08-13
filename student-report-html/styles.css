@@ -691,11 +691,12 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
   display: grid;
   grid-template-columns: minmax(0, 1fr) 470px;
   gap: 18px;
-  height: calc(100% - 174px);
-  padding: 0 42px 42px;
+  height: calc(100% - 202px);
+  padding: 0 42px 76px;
 }
 .summary-main {
   min-width: 0;
+  min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 12px;
@@ -729,10 +730,10 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
 .matrix-panel {
   min-height: 0;
   display: grid;
-  grid-template-rows: auto 28px minmax(0, 1fr);
-  padding: 12px;
+  grid-template-rows: auto 26px minmax(0, 1fr);
+  padding: 10px 12px;
 }
-.matrix-panel .section-title { margin-bottom: 8px; }
+.matrix-panel .section-title { margin-bottom: 6px; }
 .matrix-head,
 .matrix-row {
   display: grid;
@@ -745,16 +746,16 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
   grid-template-columns: 44px 1.25fr 0.85fr 0.95fr 1.35fr;
 }
 .matrix-head {
-  height: 28px;
+  height: 26px;
   padding: 0 10px;
   background: var(--navy);
   color: var(--paper);
   font-size: 12px;
   font-weight: 900;
 }
-.matrix-list { display: grid; gap: 7px; padding-top: 8px; min-height: 0; }
+.matrix-list { display: grid; gap: 4px; padding-top: 5px; min-height: 0; }
 .matrix-row {
-  min-height: 29px;
+  min-height: 26px;
   padding: 0 10px;
   border: 1px solid var(--soft-line);
   background: var(--panel-soft);
@@ -838,17 +839,20 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
 }
 .summary-aside {
   min-width: 0;
+  min-height: 0;
   display: grid;
-  grid-template-rows: 350px minmax(0, 1fr);
+  grid-template-rows: 300px minmax(0, 1fr);
   gap: 12px;
 }
 .summary-page.summary-no-team .summary-aside {
-  grid-template-rows: 1fr;
+  grid-template-rows: 300px minmax(0, 1fr);
+  align-content: start;
 }
 .summary-page.summary-no-team .insight-panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   align-content: stretch;
+  height: 300px;
 }
 .insight-panel, .team-summary-panel, .unit-summary-panel { padding: 14px; min-height: 0; overflow: hidden; }
 .insight-panel {
@@ -903,11 +907,11 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
 }
 .insight-stack-rich .insight-card {
   min-height: 0;
-  padding: 10px 12px;
+  padding: 7px 9px;
   border: 1px solid var(--soft-line);
   background: var(--panel-soft);
   align-content: start;
-  gap: 5px;
+  gap: 3px;
   overflow: hidden;
 }
 .summary-page.summary-no-team .insight-stack-rich .insight-card {
@@ -915,25 +919,25 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
 }
 .insight-card span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
 }
 .insight-card strong {
   color: var(--navy);
-  font-size: 25px;
+  font-size: 21px;
   line-height: 1;
 }
 .insight-card em {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 900;
 }
 .insight-card b {
   color: var(--navy);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
-  line-height: 1.23;
+  line-height: 1.18;
   word-break: keep-all;
 }
 .insight-card-hero {
@@ -966,9 +970,9 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
   display: grid;
   grid-template-columns: 46px minmax(0, 1fr) 62px;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   min-height: 0;
-  padding: 9px 10px 9px 9px;
+  padding: 8px 10px 8px 9px;
   border: 1px solid var(--soft-line);
   border-left: 6px solid rgba(20,80,186,0.72);
   background: linear-gradient(90deg, rgba(20,80,186,0.07), var(--panel-soft) 44%);
@@ -1020,14 +1024,14 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
 .summary-team .team-evidence {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 4px;
+  gap: 3px;
   margin-top: 0;
   padding-bottom: 0;
 }
 .summary-team .team-evidence a {
   min-width: 0;
   width: 100%;
-  min-height: 22px;
+  min-height: 18px;
   padding: 0 4px;
   display: grid;
   place-items: center;
