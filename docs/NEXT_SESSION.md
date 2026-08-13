@@ -1,16 +1,18 @@
 # 다음 작업 인수인계
 
-## 2026-08-13 프로젝트3 온애드온 배포 메모
+## 2026-08-13 프로젝트3 온애드엔 배포 메모
 
 - 프로젝트3 리포트 진입점: `student-report-html/cover3.html`
 - 프로젝트3 리포트 본문: `student-report-html/index.html?project=project3&view=all&theme=white`
 - 프로젝트3 관리자 런처: `project3-admin.html`
 - 프로젝트3 데이터 파일: `student-report-html/data-project3.js`
+- 최종 성장 종합 결과: `student-report-html/growth.html?theme=white`
 - 프로젝트3 DB: `https://docs.google.com/spreadsheets/d/1zZZrmg9d8Tw8CbRGbMMOu5_uGb4cfVgk6WYJ-4ZCTKw/edit`
 - 프로젝트3 Apps Script 웹앱: `https://script.google.com/macros/s/AKfycbyW24J5xR5IQVnSUa_nao7Q1Q5EP3PdQqtURM77u46HeQSMbR0Y9MaG1Y4YH7PA5a2WRA/exec`
 - Apps Script 원본 백업: `apps-script/Code.project3-onaddon.gs`
 - `dryRun` 검증 완료: DB에 쓰지 않는 요청으로 필수값 검증 정상, 완료 조회는 기존 AI 초안 8행을 실제 완료로 집계하지 않음
-- 주의: DB에 들어간 8행은 온애드온 실제 회신이 아니라 `AI 멘토링 초안/담당자 검토용`이다. 실제 기업 제출이 들어오면 해당 훈련생 행을 실제 회신으로 갱신하는 구조다.
+- 주의: DB에 들어간 8행은 온애드엔 실제 회신이 아니라 `AI 멘토링 초안/담당자 검토용`이다. 실제 기업 제출이 들어오면 해당 훈련생 행을 실제 회신으로 갱신하는 구조다.
+- 성장 종합 기준: 프로젝트1·2·3 기업 피드백 대시보드는 출판 부문 능력단위 1~7 + 해당 프로젝트만 반영하고 영상은 미포함. `growth.html`은 개인 이수·수료 및 사후관리 판단용으로 영상 + 출판 능력단위 1~7 + 프로젝트1·2·3 확정 숫자 점수를 함께 표시한다. 취업/수료·이수/중탈/미응시는 상태값으로 보존하고 점수 환산하지 않는다.
 
 ## 현재 상태
 

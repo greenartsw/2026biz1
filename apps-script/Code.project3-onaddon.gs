@@ -3,7 +3,7 @@ const CONFIG = {
   feedbackSheetName: '훈련생 피드백',
   courseName: '[기맞1차]출판&광고',
   projectName: '프로젝트3',
-  companyName: '온애드온',
+  companyName: '온애드엔',
   reportBaseUrl: 'https://greenartsw.github.io/2026biz1/student-report-html/index.html?project=project3',
   draftMarkers: ['AI 멘토링 초안', '담당자 검토용', '[초안 성격]']
 };
@@ -76,7 +76,7 @@ function doGet(e) {
 
   return HtmlService
     .createHtmlOutput(buildDashboardHtml_())
-    .setTitle('프로젝트3 온애드온 피드백 접수 대시보드')
+    .setTitle('프로젝트3 온애드엔 피드백 접수 대시보드')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -139,7 +139,7 @@ function validatePayload_(payload) {
     throw new Error('프로젝트3 전용 접수 URL입니다.');
   }
   if (company && normalize_(company) !== normalize_(CONFIG.companyName)) {
-    throw new Error('온애드온 전용 접수 URL입니다.');
+    throw new Error('온애드엔 전용 접수 URL입니다.');
   }
   if (!(payload.student || payload['훈련생'])) throw new Error('훈련생명이 없습니다.');
 
@@ -166,7 +166,7 @@ function buildFeedbackRow_(payload) {
     row[COL.firstRating - 1 + index] = ratings[item] || payload[item] || '';
   });
   row[COL.overallFeedback - 1] = payload.feedback || payload['종합 피드백'] || '';
-  row[COL.companyMemo - 1] = payload.memo || payload['기업 메모'] || '온애드온 실제 기업 회신';
+  row[COL.companyMemo - 1] = payload.memo || payload['기업 메모'] || '온애드엔 실제 기업 회신';
   row[COL.targetChecked - 1] = payload.targetChecked === false ? false : true;
   row[COL.theme - 1] = payload.theme || payload['테마'] || 'white';
   row[COL.pageUrl - 1] = payload.pageUrl || payload['페이지URL'] || '';
@@ -262,7 +262,7 @@ function buildDashboardHtml_() {
     '<!doctype html><html><head><meta charset="utf-8">',
     '<style>body{font-family:Arial,"Noto Sans KR",sans-serif;margin:24px;color:#172554}a{color:#0f62fe}table{border-collapse:collapse;width:100%;margin-top:16px}th,td{border:1px solid #d7dee8;padding:8px;text-align:left;font-size:13px}th{background:#eaf2ff}.note{background:#fff7db;padding:12px;border:1px solid #ead28a}</style>',
     '</head><body>',
-    '<h1>프로젝트3 온애드온 피드백 접수</h1>',
+    '<h1>프로젝트3 온애드엔 피드백 접수</h1>',
     '<p class="note">AI 멘토링 초안 행은 실제 기업 회신으로 집계하지 않습니다. 실제 제출 시 해당 훈련생 행을 실제 회신으로 갱신합니다.</p>',
     '<p>실제 기업 회신 완료: <strong>' + payload.records.length + '건</strong> · <a target="_blank" href="' + sheetUrl + '">DB 열기</a></p>',
     '<table><thead><tr><th>제출시각</th><th>훈련생</th><th>프로젝트3</th><th>채용적합도</th><th>피드백</th></tr></thead><tbody>',
