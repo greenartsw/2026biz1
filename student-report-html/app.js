@@ -433,13 +433,15 @@ function renderTeamSummary(team, roster) {
   }).join("");
   return [
     '<article class="summary-team">',
-      '<div><strong>' + esc(team.id) + '</strong></div>',
+      '<div class="summary-team-head"><strong>' + esc(team.id) + '</strong></div>',
+      '<div class="summary-team-body">',
       '<div class="summary-team-score">',
-        '<span>협업 평균 ' + esc(scoreLabel(avgCollaboration)) + '</span>',
-        '<span>본평가 평균 ' + esc(scoreLabel(avgFinal)) + '</span>',
-        '<span>' + esc(projectScoreLabel()) + ' 평균 ' + esc(scoreLabel(avgProject)) + '</span>',
+        '<span><em>협업</em><b>' + esc(scoreLabel(avgCollaboration)) + '</b></span>',
+        '<span><em>본평균</em><b>' + esc(scoreLabel(avgFinal)) + '</b></span>',
+        '<span><em>' + esc(projectScoreLabel()) + '</em><b>' + esc(scoreLabel(avgProject)) + '</b></span>',
       '</div>',
       '<div class="summary-team-members">' + memberNames + '</div>',
+      '</div>',
       teamEvidence(team),
     '</article>'
   ].join("");
@@ -471,7 +473,7 @@ function renderSummaryPage() {
   const growthFocusStudents = scoredRows.filter((student) => student.group === "성장관리" || student.group === "참여안정" || student.final < 80 || student.fit < 85);
   const matrix = [...scoredRows, ...missingRows, ...dropoutRows];
   const recommendedLine = scoredRows.slice(0, 3).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>");
-  const highFitLine = highFit.slice(0, 6).map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join("<br>") || "90% 이상 후보 없음";
+  const highFitLine = highFit.map((student) => esc(student.maskedName) + " " + esc(percentLabel(student.fit))).join(" · ") || "90% 이상 후보 없음";
   const statusLine = statusOnlyRows.map((student) => esc(student.maskedName) + " " + esc(summaryStatusDetail(student))).join("<br>") || "상태 특이사항 없음";
   const focusLine = Array.isArray(cfg.summaryFocusItems)
     ? cfg.summaryFocusItems.map(esc).join("<br>")
