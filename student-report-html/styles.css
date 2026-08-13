@@ -839,7 +839,7 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
 .summary-aside {
   min-width: 0;
   display: grid;
-  grid-template-rows: 142px minmax(0, 1fr);
+  grid-template-rows: 314px minmax(0, 1fr);
   gap: 16px;
 }
 .summary-page.summary-no-team .summary-aside {
@@ -892,15 +892,15 @@ textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; 
 .insight-stack-rich {
   height: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: 1.08fr 1fr;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
 }
 .insight-stack-rich .insight-card {
-  min-height: 132px;
-  padding: 12px;
+  min-height: 0;
+  padding: 10px 12px;
   border: 1px solid var(--soft-line);
   background: var(--panel-soft);
   align-content: start;
-  gap: 7px;
+  gap: 5px;
   overflow: hidden;
 }
 .summary-page.summary-no-team .insight-stack-rich .insight-card {
