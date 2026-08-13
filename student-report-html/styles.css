@@ -649,6 +649,22 @@ textarea { width: 100%; min-height: 76px; resize: vertical; border: 1px solid va
 textarea:disabled { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; cursor: not-allowed; opacity: 1; }
 .feedback-lines textarea { flex: 1 1 auto; min-height: 0; height: 100%; resize: none; }
 .memo-panel { display: block; min-height: 0; }
+.memo-panel.is-feedback-complete .memo-tags { display: none; }
+.memo-panel.is-feedback-complete textarea { display: none; }
+.feedback-readonly {
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  padding: 11px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 750;
+  line-height: 1.42;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
 .memo-tags { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 5px; min-width: 0; }
 .memo-tags .chip { min-height: 22px; padding: 0 7px; border-radius: 4px; background: rgba(20,80,186,0.09); color: var(--blue); font-size: 10px; line-height: 1; white-space: nowrap; }
 .page-footer { position: absolute; left: 42px; right: 42px; bottom: 16px; color: var(--muted); font-size: 12px; font-weight: 900; z-index: 1; }

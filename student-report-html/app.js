@@ -838,6 +838,17 @@ function feedbackTextarea(form) {
   return ((page || form).querySelector(".feedback-lines textarea") || null);
 }
 
+function syncFeedbackReadonly(form, record, completed) {
+  const page = form && form.closest ? form.closest(".report-page") : null;
+  const memoPanel = page && page.querySelector(".memo-panel");
+  const readonly = page && page.querySelector("[data-feedback-readonly]");
+  if (memoPanel) memoPanel.classList.toggle("is-feedback-complete", Boolean(completed && record && record.feedback));
+  if (!readonly) return;
+  const feedback = record && record.feedback !== undefined && record.feedback !== null ? String(record.feedback) : "";
+  readonly.textContent = feedback;
+  readonly.hidden = !(completed && feedback.trim());
+}
+
 function applyCompletedFeedbackValues(form, record) {
   if (!record) return;
   const ratings = record.ratings || {};
@@ -872,6 +883,7 @@ function applyCompletedButtonState(form, student) {
   const record = completedFeedbackRecord(student);
   const completed = Boolean(record) || isFeedbackCompleted(student);
   if (record) applyCompletedFeedbackValues(form, record);
+  syncFeedbackReadonly(form, record, completed);
   form.classList.toggle("is-mentoring-complete", completed);
   setCompletedFeedbackControls(form, completed);
   button.disabled = completed;
@@ -1399,6 +1411,7 @@ function renderPageTwo(student) {
               </div>
             </div>
             <textarea aria-label="${esc(student.name)} 종합 피드백" placeholder="기업 담당자 의견을 입력하세요."></textarea>
+            <div class="feedback-readonly" data-feedback-readonly hidden></div>
           </div>
         </aside>
       </div>
