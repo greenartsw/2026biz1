@@ -62,8 +62,28 @@
     </section>
     <main id="reportDeck" class="deck" aria-live="polite"></main>
     <script src="./data.js?v=20260806-review1"></script>
-    <script src="./data-project3.js?v=20260813-companyfix1"></script>
-    <script src="./app.js?v=20260813-adminfix1"></script>
+    <script>
+      (function loadProjectReport() {
+        var params = new URLSearchParams(window.location.search);
+        var project = String(params.get("project") || "").toLowerCase();
+        var scripts = [];
+        if (project === "project3" || project === "p3") {
+          scripts.push("./data-project3.js?v=20260813-companyfix1");
+        }
+        scripts.push("./app.js?v=20260814-project-switch1");
+
+        function loadNext() {
+          var src = scripts.shift();
+          if (!src) return;
+          var script = document.createElement("script");
+          script.src = src;
+          script.onload = loadNext;
+          document.body.appendChild(script);
+        }
+
+        loadNext();
+      })();
+    </script>
   </body>
 </html>
 
