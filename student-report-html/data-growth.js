@@ -17,6 +17,7 @@ window.GROWTH_CONFIG = {
   criteria: [
     "프로젝트1·2·3 기업 피드백 대시보드는 출판 부문 능력단위 1~7과 해당 프로젝트 평가만 반영하며, 영상 과목은 포함하지 않습니다.",
     "본 종합 결과는 개인 이수·수료 및 사후관리 판단용으로 영상 + 출판 능력단위 1~7 + 프로젝트1·2·3 확정 점수를 함께 확인합니다.",
+    "동료평가는 점수 평균에 섞지 않고 능력단위7과 프로젝트1 수행 맥락을 별도 영역으로 구분해 확인합니다.",
     "취업, 수료/이수, 중탈, 미응시는 상태값으로 보존하고 점수로 환산하지 않습니다. 종합점수는 숫자로 확정된 항목만 평균 산정합니다."
   ],
   links: [
@@ -37,6 +38,34 @@ window.GROWTH_CONFIG = {
       url: "https://greenartsw.github.io/2026biz1/student-report-html/index.html?project=project3&view=all&theme=white&admin=1"
     }
   ]
+};
+
+window.GROWTH_PEER_ASSESSMENTS = {
+  unit7: {
+    label: "능력단위7 광고·브랜딩 동료평가",
+    source: "능력단위7 팀별 역량 피드백&개인 성과 기술서 응답 원자료",
+    sourceUrl: "https://drive.google.com/drive/folders/1GirW8gSPGEnmtLwJytZnxOD_oz0Cw47Y",
+    values: {}
+  },
+  project1: {
+    label: "프로젝트1 팀 수행 동료평가",
+    source: "프로젝트1 평가결과 탭 동료평가·자기평가·교수자협업",
+    sourceUrl: "https://drive.google.com/drive/folders/1UoVbII_HwVnu6IpUFGIJiTh8mWy0WY_M",
+    values: {
+      "김O정": { peer: 84, self: 88, instructor: 78 },
+      "김O림": { peer: 88, self: 86, instructor: 84 },
+      "김O수": { peer: 90, self: 89, instructor: 88 },
+      "김O교": { peer: 92, self: 93, instructor: 90 },
+      "노O진": { peer: 89, self: 90, instructor: 86 },
+      "문O권": { peer: 82, self: 81, instructor: 80 },
+      "박O람": { peer: 90, self: 89, instructor: 88 },
+      "배O연": { peer: 94, self: 92, instructor: 91 },
+      "신O정": { peer: 84, self: 85, instructor: 82 },
+      "유O령": { peer: 93, self: 94, instructor: 90 },
+      "장O혁": { peer: 89, self: 88, instructor: 86 },
+      "허O아": { peer: 91, self: 90, instructor: 87 }
+    }
+  }
 };
 
 window.GROWTH_STUDENTS = [

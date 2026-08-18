@@ -26,6 +26,18 @@ window.REPORT_CONFIG = {
     "collaborationMetrics": false,
     "coverSelection": false
   },
+  "projectMissingNames": [
+    "김예림",
+    "김지수",
+    "김혜교",
+    "문일권"
+  ],
+  "feedbackHiddenNames": [
+    "김예림",
+    "김지수",
+    "김혜교",
+    "문일권"
+  ],
   "instructors": [
     "황혜진"
   ],
@@ -53,7 +65,11 @@ window.REPORT_CONFIG = {
       "id": "개인별",
       "members": [
         "김민정",
+        "김예림",
+        "김지수",
+        "김혜교",
         "노예진",
+        "문일권",
         "박가람",
         "배도연",
         "신유정",
@@ -96,6 +112,80 @@ window.REPORT_STUDENTS = [
     "teacherOpinion": "김민정 훈련생은 수원화성 미디어아트쇼를 주제로 공공 행사 홍보물의 기본 구조를 갖췄습니다. 본 문구는 온애드엔 실제 회신 전 담당자 검토용 멘토링 초안이며, 실제 현장전문가 피드백 수신 시 보완 예정입니다."
   },
   {
+    "name": "김예림",
+    "maskedName": "김O림",
+    "status": "중탈",
+    "pre": 72,
+    "diagnostic": "중탈",
+    "final": "중탈",
+    "selfCheck": "중탈",
+    "attendance": 61,
+    "attendedDays": 75,
+    "totalDays": 123,
+    "project": "중탈",
+    "project3Score": "중탈",
+    "projectScore": "중탈",
+    "grade": "중탈",
+    "fit": "중탈",
+    "strengths": [
+      "중도탈락자로 프로젝트3 기업 피드백 산출 대상에서 제외되었습니다."
+    ],
+    "needs": [
+      "중도탈락자 별도 관리 대상입니다."
+    ],
+    "teacherOpinion": "김예림 훈련생은 평가결과 종합 기준 중도탈락자로 확인되어 프로젝트3 기업 피드백 대상에서 제외합니다."
+  },
+  {
+    "name": "김지수",
+    "maskedName": "김O수",
+    "status": "8/3취업",
+    "pre": 81,
+    "diagnostic": 85.5,
+    "final": 87.7,
+    "selfCheck": 98.6,
+    "attendance": 95.1,
+    "attendedDays": 117,
+    "totalDays": 123,
+    "project": "취업",
+    "project3Score": "취업",
+    "projectScore": "취업",
+    "grade": "취업",
+    "fit": "취업",
+    "strengths": [
+      "취업으로 인해 프로젝트3 기업 피드백 산출 대상에서 제외되었습니다.",
+      "능력단위 1~7 성취 평균은 기존 평가 이력으로 유지됩니다."
+    ],
+    "needs": [
+      "취업 이후 실무 적응 관점의 사후관리 기록을 우선 확인합니다."
+    ],
+    "teacherOpinion": "김지수 훈련생은 2026.08.03 취업 상태로 확인되어 프로젝트3 기업 피드백 대상에서는 제외하되, 기존 능력단위 평가 평균은 유지합니다."
+  },
+  {
+    "name": "김혜교",
+    "maskedName": "김O교",
+    "status": "80%이상수료\n7/20취업",
+    "pre": 89,
+    "diagnostic": 74,
+    "final": 82.3,
+    "selfCheck": 95.7,
+    "attendance": 80.5,
+    "attendedDays": 99,
+    "totalDays": 123,
+    "project": "취업",
+    "project3Score": "취업",
+    "projectScore": "취업",
+    "grade": "취업",
+    "fit": "취업",
+    "strengths": [
+      "취업으로 인해 프로젝트3 기업 피드백 산출 대상에서 제외되었습니다.",
+      "80% 이상 수료 기준과 취업 상태가 함께 확인됩니다."
+    ],
+    "needs": [
+      "취업 이후 직무 적응과 포트폴리오 보완 여부를 사후관리에서 확인합니다."
+    ],
+    "teacherOpinion": "김혜교 훈련생은 80% 이상 수료 및 2026.07.20 취업 상태로 확인되어 프로젝트3 기업 피드백 대상에서는 제외하되, 기존 능력단위 평가 평균은 유지합니다."
+  },
+  {
     "name": "노예진",
     "maskedName": "노O진",
     "pre": 83,
@@ -120,6 +210,31 @@ window.REPORT_STUDENTS = [
       "핵심 메시지를 먼저 읽히게 하는 화면 흐름을 점검하면 좋겠습니다."
     ],
     "teacherOpinion": "노예진 훈련생은 포스터, 리플릿, 카드뉴스를 매체별로 정리하고 목업으로 적용 장면을 보여주었습니다. 본 문구는 온애드엔 실제 회신 전 담당자 검토용 멘토링 초안입니다."
+  },
+  {
+    "name": "문일권",
+    "maskedName": "문O권",
+    "status": "80%이상수료\n수료/이수",
+    "pre": 75,
+    "diagnostic": 77.4,
+    "final": 73.7,
+    "selfCheck": 90,
+    "attendance": 80.5,
+    "attendedDays": 99,
+    "totalDays": 123,
+    "project": "수료/이수",
+    "project3Score": "수료/이수",
+    "projectScore": "수료/이수",
+    "grade": "수료/이수",
+    "fit": "수료/이수",
+    "strengths": [
+      "80% 이상 수료 및 이수 상태로 프로젝트3 기업 피드백 산출 대상에서 제외되었습니다.",
+      "능력단위 1~7 성취 평균은 기존 평가 이력으로 유지됩니다."
+    ],
+    "needs": [
+      "이론 이해를 실무 산출물로 전환하는 보완 학습을 사후관리에서 확인합니다."
+    ],
+    "teacherOpinion": "문일권 훈련생은 80% 이상 수료/이수 상태로 확인되어 프로젝트3 기업 피드백 대상에서는 제외하되, 기존 능력단위 평가 평균은 유지합니다."
   },
   {
     "name": "박가람",

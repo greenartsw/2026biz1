@@ -24,6 +24,30 @@ let completedCoverSelection = { completed: false, teams: [], records: [] };
 let completedFeedbackLoading = null;
 let completedFeedbackLoaded = false;
 
+function companyDisplayName() {
+  return String(cfg.companyName || "기업")
+    .replace(/\(주\)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function reportTitleSuffix() {
+  const title = String(cfg.reportTitle || "개인별 성과 리포트").replace(/\s+/g, " ").trim();
+  return title.replace("개인별 훈련생 성과 리포트", "개인별 성과 리포트");
+}
+
+function reportDisplayTitle() {
+  return [cfg.projectName || "프로젝트", companyDisplayName(), reportTitleSuffix()].filter(Boolean).join(" ");
+}
+
+function applyReportChrome() {
+  const title = reportDisplayTitle();
+  document.title = title;
+  document.querySelectorAll("[data-report-title]").forEach((item) => {
+    item.textContent = title;
+  });
+}
+
 function initAdminDock() {
   const params = new URLSearchParams(location.search);
   const enabled = adminModeEnabled();
@@ -114,12 +138,17 @@ function attr(value) {
 }
 
 function isMissing(value) {
-  return value === null || value === undefined || value === "" || value === "중탈" || value === "미응시";
+  if (value === null || value === undefined) return true;
+  const text = String(value).trim();
+  if (!text) return true;
+  if (statusLabelFromText(text, true)) return true;
+  if (typeof value === "string" && !Number.isFinite(Number(text))) return true;
+  return false;
 }
 
 function missingValueLabel(value) {
-  if (value === "미응시") return "미응시";
-  if (value === "중탈") return "중탈";
+  const status = statusLabelFromText(value, true);
+  if (status) return status;
   return cfg.missingScoreLabel || "중탈";
 }
 
@@ -311,6 +340,7 @@ function statusLabelFromText(value, preferMissing = false) {
   if (status.includes("중탈")) return "중탈";
   if (preferMissing && status.includes("미응시")) return "미응시";
   if (status.includes("취업")) return "취업";
+  if (status.includes("수료/이수") || status.includes("수료·이수")) return "수료/이수";
   if (status.includes("수료")) return "수료";
   if (status.includes("미응시")) return "미응시";
   return "";
@@ -322,10 +352,9 @@ function nameInList(student, names) {
 }
 
 function isProjectMissingStudent(student) {
+  const projectStatus = projectStatusLabel(student);
   return nameInList(student, cfg.projectMissingNames)
-    || statusLabelFromText(student && student.project2Score, true) === "미응시"
-    || statusLabelFromText(student && student.projectScore, true) === "미응시"
-    || statusLabelFromText(summaryProject1Score(student), true) === "미응시";
+    || Boolean(projectStatus);
 }
 
 function feedbackPageHidden(student) {
@@ -344,9 +373,25 @@ function isDropoutStudent(student) {
   return studentStatusLabel(student) === "중탈";
 }
 
+function projectStatusLabel(student) {
+  const values = [
+    student && student.project2Score,
+    student && student.project3Score,
+    student && student.projectScore,
+    summaryProject1Score(student)
+  ];
+  for (const value of values) {
+    const status = statusLabelFromText(value, true);
+    if (status) return status;
+  }
+  return "";
+}
+
 function summaryStatusLabel(student) {
+  if (isDropoutStudent(student)) return "중탈";
+  const projectStatus = projectStatusLabel(student);
+  if (projectStatus) return projectStatus;
   if (isProjectMissingStudent(student)) return "미응시";
-  if (isDropoutStudent(student)) return "미응시";
   return "";
 }
 
@@ -370,7 +415,7 @@ function matrixStatusValue(label) {
 }
 
 function matrixCellStatus(student, value) {
-  if (summaryStatusLabel(student) === "미응시") return "미응시";
+  if (summaryStatusLabel(student)) return summaryStatusLabel(student);
   return statusLabelFromText(value, true) || summaryStatusLabel(student);
 }
 
@@ -381,27 +426,29 @@ function renderMatrixRow(student, index) {
   const statusBadge = summaryStatusBadge(studentStatusLabel(student) || statusLabel);
   const teamCell = teamLabelVisible() ? '<span>' + esc(student.team.id) + '</span>' : "";
   if (dropout) {
+    const label = summaryStatusLabel(student) || studentStatusLabel(student) || "중탈";
     return [
       '<div class="matrix-row matrix-muted matrix-status-row' + (teamLabelVisible() ? '' : ' matrix-no-team') + '">',
         '<span class="matrix-rank matrix-rank-status">-</span>',
         '<strong>' + esc(student.maskedName) + statusBadge + '</strong>',
         teamCell,
-        matrixStatusValue(studentStatusLabel(student) || "미응시"),
-        matrixStatusValue("미응시"),
-        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue("미응시") + '</div>',
+        matrixStatusValue(label),
+        matrixStatusValue(label),
+        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue(label) + '</div>',
       '</div>'
     ].join("");
   }
 
   if (projectMissing) {
+    const label = summaryStatusLabel(student) || "미응시";
     return [
       '<div class="matrix-row matrix-muted matrix-missing-row' + (teamLabelVisible() ? '' : ' matrix-no-team') + '">',
         '<span class="matrix-rank">' + esc(index + 1) + '</span>',
         '<strong>' + esc(student.maskedName) + statusBadge + '</strong>',
         teamCell,
         '<span>' + esc(scoreLabel(student.final)) + '</span>',
-        matrixStatusValue("미응시"),
-        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue("미응시") + '</div>',
+        matrixStatusValue(label),
+        '<div class="matrix-fit matrix-fit-status">' + matrixStatusValue(label) + '</div>',
       '</div>'
     ].join("");
   }
@@ -458,7 +505,7 @@ function teacherSummaryItems() {
 function renderSummaryPage() {
   const active = activeStudents();
   const dropouts = students.filter(isDropoutStudent);
-  const statusOnlyRows = students.filter((student) => isProjectMissingStudent(student) || isDropoutStudent(student));
+  const statusOnlyRows = students.filter((student) => Boolean(summaryStatusDetail(student)));
   const scoredRows = active.filter((student) => !isProjectMissingStudent(student)).sort((a, b) => numericScore(b.fit) - numericScore(a.fit));
   const missingRows = active.filter(isProjectMissingStudent);
   const dropoutRows = students.filter(isDropoutStudent);
@@ -654,7 +701,7 @@ function pageHeader(student, pageLabel) {
   return `
     <div class="page-header">
       <div class="header-copy">
-        <h1>${esc(cfg.reportTitle || "개인별 훈련생 성과 리포트")}</h1>
+        <h1>${esc(reportDisplayTitle())}</h1>
       </div>
       <div class="page-mark">
         <strong>${esc(pageLabel === "1P" ? "개인성적표" : pageLabel === "2P" ? "개인피드백" : pageLabel)}</strong>
@@ -1426,7 +1473,7 @@ function excludedFeedbackLabel(student) {
 
 function excludedFeedbackSubLabel(student) {
   if (isDropoutStudent(student)) return "중도탈락 · 피드백 비대상";
-  if (isProjectMissingStudent(student)) return projectScoreLabel() + " 미응시 · 피드백 비대상";
+  if (isProjectMissingStudent(student)) return projectScoreLabel() + " " + excludedFeedbackLabel(student) + " · 피드백 비대상";
   return "피드백 비대상";
 }
 
@@ -1581,6 +1628,7 @@ function initControls() {
   });
 }
 
+applyReportChrome();
 initAdminDock();
 initControls();
 render();

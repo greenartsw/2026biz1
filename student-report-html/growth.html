@@ -4,25 +4,27 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>훈련생 성장 종합 결과</title>
-    <link rel="stylesheet" href="./styles.css?v=20260813-adminfix1" />
-    <link rel="stylesheet" href="./growth.css?v=20260813-growth1" />
+    <link rel="stylesheet" href="./styles.css?v=20260818-reportflow1" />
+    <link rel="stylesheet" href="./growth.css?v=20260818-growthflow1" />
   </head>
   <body>
     <header class="toolbar" data-ui>
       <div class="brand">
         <img class="brand-logo" src="./assets/greensw_logo.png" alt="그린컴퓨터아카데미 수원" />
         <div class="brand-copy">
-          <strong>훈련생 성장 종합 결과</strong>
-          <span>영상 + 프로젝트1·2·3 + 사후관리</span>
+          <strong data-growth-title>훈련생 성장 종합 결과</strong>
+          <span data-growth-subtitle>영상 + 출판 1~7 + 프로젝트1·2·3 + 동료평가</span>
         </div>
       </div>
-      <nav class="growth-nav" aria-label="관련 화면">
+      <nav class="growth-nav" data-admin-only aria-label="관련 화면">
+        <a href="./index.html?view=all&amp;theme=white&amp;admin=1">프로젝트1 관리자</a>
+        <a href="./index2.html?view=all&amp;theme=white&amp;admin=1">프로젝트2 관리자</a>
         <a href="./index.html?project=project3&amp;view=all&amp;theme=white&amp;admin=1">프로젝트3 관리자</a>
         <a href="./cover3.html">프로젝트3 기업화면</a>
       </nav>
     </header>
     <main id="growthDeck" class="deck growth-deck" aria-live="polite"></main>
-    <script src="./data-growth.js?v=20260813-growth1"></script>
-    <script src="./growth.js?v=20260813-growth1"></script>
+    <script src="./data-growth.js?v=20260818-growthflow1"></script>
+    <script src="./growth.js?v=20260818-growthflow1"></script>
   </body>
 </html>

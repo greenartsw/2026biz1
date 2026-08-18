@@ -5,6 +5,10 @@
   flex-wrap: wrap;
 }
 
+[data-admin-only][hidden] {
+  display: none !important;
+}
+
 .growth-nav a,
 .growth-links a {
   display: inline-flex;
@@ -201,7 +205,7 @@
 
 .growth-note-panel {
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
   gap: 6px;
   padding: 16px;
 }
@@ -235,6 +239,102 @@
   display: block;
   color: var(--navy);
   margin-bottom: 4px;
+}
+
+.peer-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.peer-card {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--soft-line);
+  background: #fff;
+  padding: 8px 10px;
+}
+
+.peer-card span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.peer-card strong {
+  color: var(--navy);
+  font-size: 12px;
+  line-height: 1.24;
+  font-weight: 950;
+}
+
+.peer-card em,
+.peer-card a {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.25;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.peer-card a {
+  color: var(--blue);
+}
+
+.growth-access-page {
+  display: grid;
+  place-items: center;
+}
+
+.growth-access-card {
+  width: min(620px, 86%);
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 40px;
+  box-shadow: var(--small-shadow);
+}
+
+.growth-access-card h1 {
+  margin: 8px 0 12px;
+  color: var(--navy);
+  font-size: 42px;
+}
+
+.growth-access-card p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 800;
+}
+
+.growth-student-page .growth-layout {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+.growth-student-main {
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 0.42fr);
+}
+
+.growth-personal-note {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  border: 1px solid var(--soft-line);
+  background: #fff;
+  padding: 12px 14px;
+}
+
+.growth-personal-note strong {
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.growth-personal-note span {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 850;
 }
 
 .growth-links {
