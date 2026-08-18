@@ -88,7 +88,7 @@ function renderStudentRow(student) {
   return `
     <tr>
       <td class="score-strong">${escGrowth(student.name)}</td>
-      <td class="status-cell ${tone}">${escGrowth(student.status || "재학")}</td>
+      <td class="status-cell ${tone}">${escGrowth(statusLabel(student))}</td>
       <td>${escGrowth(numberLabel(student.video))}</td>
       <td>${escGrowth(numberLabel(student.publishingAverage))}</td>
       <td>${escGrowth(numberLabel(student.finalAverage))}</td>
@@ -134,9 +134,7 @@ function renderPeerCard(key, student = null) {
     ].join(" · ");
   }
   if (student) summary = peerScoreLine(record);
-  const source = group.sourceUrl
-    ? `<a href="${escGrowth(group.sourceUrl)}" target="_blank" rel="noreferrer">${escGrowth(group.source || "원자료")}</a>`
-    : `<em>${escGrowth(group.source || "평가결과 종합 기준")}</em>`;
+  const source = `<em>${escGrowth(group.source || "평가결과 종합 기준")}</em>`;
   return `
     <article class="peer-card">
       <span>${escGrowth(group.label || key)}</span>
@@ -175,7 +173,11 @@ function gradeByScore(value) {
 }
 
 function statusLabel(student) {
-  return student.status || "재학";
+  const status = String(student.status || "").trim();
+  if (status.includes("중탈")) return "중도탈락";
+  if (status.includes("취업")) return "취업";
+  if (status.includes("수료") || status.includes("이수")) return "수료";
+  return "수료";
 }
 
 function projectParticipation(student) {
@@ -185,12 +187,19 @@ function projectParticipation(student) {
   return Math.round((participated / projects.length) * 100);
 }
 
-function growthDeltaLabel(student) {
-  const start = numericGrowth(student.video);
-  const end = numericGrowth(student.overall);
-  if (start === null || end === null) return "-";
-  const delta = end - start;
-  return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}점`;
+function evaluationCoverage(student) {
+  return [student.video, student.publishingAverage, student.projectAverage]
+    .filter((value) => numericGrowth(value) !== null).length;
+}
+
+function evaluationCoverageLabel(student) {
+  return `${evaluationCoverage(student)}/3`;
+}
+
+function summaryOpinion(student) {
+  const trend = student.trend || "평가 결과 확인";
+  const aftercare = student.aftercare || "후속 학습 지원 방향 확인";
+  return `확정 점수 기준으로 ${trend} 흐름이 확인되며, 후속 지원은 ${aftercare} 중심으로 운영합니다.`;
 }
 
 function renderScoreBar(label, value) {
@@ -207,10 +216,11 @@ function renderScoreBar(label, value) {
 
 function chartSeries(student) {
   return [
-    { label: "영상", value: student.video },
-    { label: "출판", value: student.publishingAverage },
-    { label: "본평가", value: student.finalAverage },
-    { label: "프로젝트", value: student.projectAverage },
+    { label: "영상1", value: student.video },
+    { label: "출판7", value: student.publishingAverage },
+    { label: "프1", value: student.project1 },
+    { label: "프2", value: student.project2 },
+    { label: "프3", value: student.project3 },
     { label: "종합", value: student.overall }
   ].filter((item) => numericGrowth(item.value) !== null);
 }
@@ -228,7 +238,7 @@ function renderTrendChart(student) {
   });
   const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
   return `
-    <svg class="student-trend-svg" viewBox="0 0 300 148" role="img" aria-label="${escGrowth(student.name)} 성장 흐름">
+    <svg class="student-trend-svg" viewBox="0 0 300 148" role="img" aria-label="${escGrowth(student.name)} 평가 영역 비교">
       <g class="trend-grid">
         <line x1="24" y1="24" x2="276" y2="24"></line>
         <line x1="24" y1="48" x2="276" y2="48"></line>
@@ -245,6 +255,24 @@ function renderTrendChart(student) {
         </g>
       `).join("")}
     </svg>
+  `;
+}
+
+function renderEvaluationFlow(student) {
+  const items = [
+    { label: "영상 1개", value: student.video },
+    { label: "출판 7개", value: student.publishingAverage },
+    { label: "프로젝트 1·2·3", value: student.projectAverage },
+    { label: "최종 종합", value: student.overall }
+  ];
+  return `
+    <div class="result-growth-flow">
+      ${items.map((item, index) => `
+        <span>${escGrowth(item.label)}<br><b>${escGrowth(numberLabel(item.value))}</b></span>
+        ${index < items.length - 1 ? "<i></i>" : ""}
+      `).join("")}
+    </div>
+    <em class="result-flow-note">상태값 제외 · 숫자 확정 항목 평균</em>
   `;
 }
 
@@ -384,7 +412,7 @@ function renderAccessGate() {
 
 function renderGrowthPage() {
   const metrics = growthConfig.metrics || {};
-  setGrowthChrome(growthConfig.reportTitle || "훈련생 성장 종합 결과", "영상 + 출판 1~7 + 프로젝트1·2·3 + 동료평가");
+  setGrowthChrome(growthConfig.reportTitle || "훈련생 성장 종합 결과", "영상 1개 + 출판 7개 + 프로젝트1·2·3 + 동료평가");
   document.body.classList.add("growth-admin-page");
   return `
     <section class="report-page growth-page" data-page="growth-summary">
@@ -470,6 +498,9 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
   const participation = projectParticipation(student);
   const strengths = topStrengths(student);
   const supports = supportFocus(student);
+  const trainingPeriod = growthConfig.trainingPeriod || "2026.02.10 ~ 2026.08.12";
+  const instructors = growthConfig.instructors || "황혜진강사 / 박서연강사";
+  const confirmer = growthConfig.confirmer || "황혜진 강사";
   return `
     <section class="${pageClass}" data-page="growth-student" data-student="${escGrowth(student.name)}">
       <div class="student-score-layout">
@@ -477,12 +508,11 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
           <header class="student-score-header">
             <div class="student-brand">
               <img src="./assets/greensw_logo.png" alt="그린컴퓨터아카데미 수원" />
-              <span>기업맞춤훈련 과정</span>
             </div>
             <h1>훈련생 성장 대시보드</h1>
             <div class="student-course-pill">
               <strong>${escGrowth(growthConfig.course || "")}</strong>
-              <span>2026.02.10 ~ 2026.08.13</span>
+              <span>${escGrowth(trainingPeriod)}</span>
             </div>
           </header>
 
@@ -498,9 +528,9 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
               <em>숫자 확정 항목 평균</em>
             </article>
             <article>
-              <span>성장 지표</span>
-              <strong>${escGrowth(growthDeltaLabel(student))}</strong>
-              <em>영상 대비 종합</em>
+              <span>평가영역</span>
+              <strong>${escGrowth(evaluationCoverageLabel(student))}</strong>
+              <em>영상·출판·프로젝트</em>
             </article>
             <article>
               <span>프로젝트 참여</span>
@@ -519,7 +549,6 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
               <div class="student-avatar" aria-hidden="true">${escGrowth(student.name.slice(0, 1))}</div>
               <h2>${escGrowth(student.name)}</h2>
               <dl>
-                <div><dt>훈련생 ID</dt><dd>GCA-2026-${String(growthStudents.indexOf(student) + 1).padStart(3, "0")}</dd></div>
                 <div><dt>과정명</dt><dd>${escGrowth(growthConfig.course || "")}</dd></div>
                 <div><dt>훈련상태</dt><dd>${escGrowth(statusLabel(student))}</dd></div>
                 <div><dt>사후관리</dt><dd>${escGrowth(student.aftercare || "-")}</dd></div>
@@ -528,8 +557,8 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
 
             <article class="student-card student-trend-card">
               <div class="student-card-title">
-                <h3>성장 추이</h3>
-                <span>영상-출판-본평가-프로젝트-종합</span>
+                <h3>평가 영역 비교</h3>
+                <span>영상·출판·프로젝트·종합</span>
               </div>
               ${renderTrendChart(student)}
             </article>
@@ -594,8 +623,8 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
             </article>
             <article>
               <h3>종합 의견</h3>
-              <p>${escGrowth(student.trend || "성장추이 확인")} · ${escGrowth(student.aftercare || "후속 학습 지원 방향 확인")}</p>
-              <span>지도교수 : 온다쌤</span>
+              <p>${escGrowth(summaryOpinion(student))}</p>
+              <span>지도교수 : ${escGrowth(instructors)}</span>
             </article>
           </section>
         </div>
@@ -613,9 +642,9 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
             <table>
               <tbody>
                 <tr><th>훈련생명</th><td>${escGrowth(student.name)}</td></tr>
-                <tr><th>훈련생 ID</th><td>GCA-2026-${String(growthStudents.indexOf(student) + 1).padStart(3, "0")}</td></tr>
                 <tr><th>과정명</th><td>${escGrowth(growthConfig.course || "")}</td></tr>
-                <tr><th>훈련기간</th><td>2026.02.10 ~ 2026.08.13</td></tr>
+                <tr><th>훈련상태</th><td>${escGrowth(statusLabel(student))}</td></tr>
+                <tr><th>훈련기간</th><td>${escGrowth(trainingPeriod)}</td></tr>
                 <tr><th>훈련기관</th><td>${escGrowth(growthConfig.issuer || "")}</td></tr>
               </tbody>
             </table>
@@ -629,25 +658,21 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
           </section>
           <section>
             <h3>동료평가 별도 영역</h3>
+            <figure class="result-peer-visual">
+              <img src="./assets/growth-peer-banner.png" alt="팀 작업 실무감각 응원 이미지" />
+            </figure>
             <div class="result-peer-mini">
               ${renderPeerCard("unit7", student)}
               ${renderPeerCard("project1", student)}
             </div>
           </section>
           <section>
-            <h3>성장 이력</h3>
-            <div class="result-growth-flow">
-              <span>영상<br><b>${escGrowth(numberLabel(student.video))}</b></span>
-              <i></i>
-              <span>본평가<br><b>${escGrowth(numberLabel(student.finalAverage))}</b></span>
-              <i></i>
-              <span>종합<br><b>${escGrowth(numberLabel(student.overall))}</b></span>
-            </div>
-            <strong class="result-delta">${escGrowth(growthDeltaLabel(student))} 변화</strong>
+            <h3>종합 산정 기준</h3>
+            ${renderEvaluationFlow(student)}
           </section>
           <section class="confirm-box">
             <span>확인자</span>
-            <strong>지도교수&nbsp;&nbsp;온다쌤</strong>
+            <strong>지도교수&nbsp;&nbsp;${escGrowth(confirmer)}</strong>
           </section>
         </aside>
       </div>
@@ -656,7 +681,7 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
 }
 
 function renderIndividualGrowthPage(student) {
-  setGrowthChrome(`${student.name} 개인 종합 성적표`, "영상 + 출판 1~7 + 프로젝트1·2·3 + 동료평가");
+  setGrowthChrome(`${student.name} 개인 종합 성적표`, "영상 1개 + 출판 7개 + 프로젝트1·2·3 + 동료평가");
   document.body.classList.add("growth-student-mode");
   return renderIndividualGrowthSection(student);
 }

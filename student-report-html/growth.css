@@ -361,7 +361,7 @@
 
 .student-score-header {
   display: grid;
-  grid-template-columns: 235px minmax(0, 1fr) 250px;
+  grid-template-columns: 235px minmax(0, 1fr) 300px;
   align-items: center;
   gap: 14px;
 }
@@ -847,7 +847,7 @@
 .student-result-sheet {
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
-  gap: 10px;
+  gap: 8px;
   padding: 0 16px 14px;
   overflow: hidden;
 }
@@ -934,18 +934,34 @@
 
 .result-summary-table th,
 .result-summary-table td {
-  padding: 5px 5px;
+  padding: 4px 5px;
   font-size: 10px;
+}
+
+.result-peer-visual {
+  margin: 0 0 6px;
+  border: 1px solid #dfe8f5;
+  border-radius: 7px;
+  background: #f1efe7;
+  overflow: hidden;
+}
+
+.result-peer-visual img {
+  display: block;
+  width: 100%;
+  height: 58px;
+  object-fit: cover;
+  object-position: center;
 }
 
 .result-peer-mini {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 6px;
+  gap: 5px;
 }
 
 .result-peer-mini .peer-card {
-  padding: 7px 8px;
+  padding: 6px 8px;
 }
 
 .result-peer-mini .peer-card span {
@@ -963,20 +979,20 @@
 
 .result-growth-flow {
   display: grid;
-  grid-template-columns: 1fr 16px 1fr 16px 1fr;
+  grid-template-columns: 1fr 12px 1fr 12px 1fr 12px 1fr;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .result-growth-flow span {
   display: grid;
   place-items: center;
-  min-height: 56px;
+  min-height: 50px;
   border: 1px solid #bcd3f5;
   border-radius: 5px;
   background: #f7fbff;
   color: var(--navy);
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.35;
   font-weight: 900;
   text-align: center;
@@ -990,6 +1006,16 @@
 .result-growth-flow i {
   height: 2px;
   background: var(--blue);
+}
+
+.result-flow-note {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  text-align: center;
 }
 
 .result-delta {
