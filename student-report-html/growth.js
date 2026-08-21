@@ -1,6 +1,7 @@
 const growthConfig = window.GROWTH_CONFIG || {};
 const growthStudents = window.GROWTH_STUDENTS || [];
 const growthPeerAssessments = window.GROWTH_PEER_ASSESSMENTS || {};
+const growthSubjectDetail = window.GROWTH_SUBJECT_DETAIL || {};
 const growthDeck = document.getElementById("growthDeck");
 const growthParams = new URLSearchParams(location.search);
 
@@ -85,21 +86,22 @@ function renderMetric(label, value, meta, tone = "blue") {
 
 function renderStudentRow(student) {
   const tone = statusTone(student);
+  const detail = growthSubjectDetail[student.name] || {};
   return `
     <tr>
       <td class="score-strong">${escGrowth(student.name)}</td>
       <td class="status-cell ${tone}">${escGrowth(statusLabel(student))}</td>
-      <td>${escGrowth(numberLabel(student.video))}</td>
-      <td>${escGrowth(numberLabel(student.publishingAverage))}</td>
-      <td>${escGrowth(numberLabel(student.finalAverage))}</td>
-      <td>${escGrowth(numberLabel(student.selfCheck))}</td>
+      <td>${escGrowth(numberLabel(detail.preAssessment))}</td>
+      <td>${escGrowth(numberLabel(detail.diagnosticAverage11))}</td>
+      <td>${escGrowth(numberLabel(detail.videoFinal))}</td>
+      <td>${escGrowth(numberLabel(detail.publishingFinal10))}</td>
+      <td>${escGrowth(numberLabel(detail.selfCheckAverage6))}</td>
       <td>${escGrowth(numberLabel(student.attendanceRate, "%"))}</td>
       <td>${escGrowth(numberLabel(student.project1))}</td>
       <td>${escGrowth(numberLabel(student.project2))}</td>
       <td>${escGrowth(numberLabel(student.project3))}</td>
-      <td>${escGrowth(numberLabel(student.projectAverage))}</td>
       <td class="score-strong">${escGrowth(numberLabel(student.overall))}</td>
-      <td>${escGrowth(student.aftercare)}</td>
+      <td>${escGrowth(detail.aftercareShort || student.aftercare)}</td>
     </tr>
   `;
 }
@@ -173,11 +175,76 @@ function gradeByScore(value) {
 }
 
 function statusLabel(student) {
+  const detail = growthSubjectDetail[student.name] || {};
+  if (detail.displayStatus) return detail.displayStatus;
   const status = String(student.status || "").trim();
   if (status.includes("중탈")) return "중도탈락";
   if (status.includes("취업")) return "취업";
   if (status.includes("수료") || status.includes("이수")) return "수료";
   return "수료";
+}
+
+function scoreCell(value, missingLabel = "미실시") {
+  return isGrowthMissing(value) ? missingLabel : numberLabel(value);
+}
+
+function renderSubjectScoreRows(student) {
+  const detail = growthSubjectDetail[student.name] || {};
+  return (detail.subjects || []).map((subject, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${escGrowth(subject.name)}</td>
+      <td>${escGrowth(scoreCell(subject.diagnostic, "원자료 없음"))}</td>
+      <td>${escGrowth(scoreCell(subject.final, "원자료 없음"))}</td>
+      <td>${escGrowth(scoreCell(subject.selfCheck))}</td>
+      <td class="source-missing">${escGrowth(subject.performanceLevel || "확인 필요")}</td>
+      <td class="source-missing">${escGrowth(subject.teacherFeedback || "원자료 없음 · 확인 필요")}</td>
+      <td class="source-missing">${escGrowth(subject.evaluationDetail || "원자료 없음 · 확인 필요")}</td>
+    </tr>
+  `).join("");
+}
+
+function renderIndividualScoreDetail(student, adminEmbed = false) {
+  const pageClass = adminEmbed
+    ? "report-page growth-page growth-subject-page growth-admin-student-page"
+    : "report-page growth-page growth-subject-page";
+  return `
+    <section class="${pageClass}" data-page="growth-student-detail" data-student="${escGrowth(student.name)}">
+      <div class="subject-score-layout">
+        <header class="subject-score-head">
+          <div>
+            <p>개인 성적표 · 2페이지</p>
+            <h1>${escGrowth(student.name)} 과목별 평가 결과</h1>
+            <span>${escGrowth(growthConfig.course || "")}</span>
+          </div>
+          <div class="subject-score-status">
+            <span>훈련상태</span>
+            <strong>${escGrowth(statusLabel(student))}</strong>
+          </div>
+        </header>
+        <div class="subject-score-note">
+          <strong>원자료 반영 기준</strong>
+          <span>사전진단·본평가·셀프점검은 평가결과 종합 파일의 원점수입니다. 셀프점검 미실시 과목은 점수로 환산하지 않습니다.</span>
+        </div>
+        <div class="subject-score-table-wrap">
+          <table class="subject-score-table">
+            <thead>
+              <tr>
+                <th>No.</th><th>과목명</th><th>사전진단</th><th>본평가</th><th>셀프점검</th>
+                <th>수행준거<br>상·중·하</th><th>교수자 피드백 Full version</th><th>평가상세 점수</th>
+              </tr>
+            </thead>
+            <tbody>${renderSubjectScoreRows(student)}</tbody>
+          </table>
+        </div>
+        <div class="subject-score-caution">
+          <strong>확인 필요</strong>
+          <span>제공된 엑셀에는 과목별 교수자 서술, 수행준거 상·중·하, 평가상세 점수가 없습니다. 사실과 다른 내용을 만들지 않기 위해 빈 영역을 명시했습니다.</span>
+        </div>
+        <footer>${escGrowth(growthConfig.issuer || "")} · 확인자 ${escGrowth(growthConfig.confirmer || "")}</footer>
+      </div>
+    </section>
+  `;
 }
 
 function projectParticipation(student) {
@@ -387,7 +454,8 @@ function renderResultRows(student) {
 function topAftercareItems() {
   const groups = new Map();
   growthStudents.forEach((student) => {
-    const key = student.aftercare || "후속관리 기준 확인";
+    const detail = growthSubjectDetail[student.name] || {};
+    const key = detail.aftercareShort || student.aftercare || "후속관리 기준 확인";
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(student.name);
   });
@@ -436,7 +504,7 @@ function renderGrowthPage() {
           ${renderMetric("상위 결과", metrics.topStudent || "-", "종합점수 기준", "amber")}
         </section>
 
-        <section class="growth-main">
+        <section class="growth-main growth-summary-main">
           <div class="growth-panel growth-table-panel">
             <div class="section-title">
               <h3>훈련생별 성장 종합표</h3>
@@ -448,17 +516,17 @@ function renderGrowthPage() {
                   <tr>
                     <th>훈련생</th>
                     <th>상태</th>
-                    <th>영상</th>
-                    <th>출판 1~7 평균</th>
-                    <th>본(재)평가평균</th>
-                    <th>셀프체크</th>
+                    <th>사전평가</th>
+                    <th>사전진단<br>(11과목)</th>
+                    <th>영상교과목<br>(1과목) 본평가</th>
+                    <th>출판교과목<br>(10과목) 본평가</th>
+                    <th>셀프체크자기점검<br>(6과목)</th>
                     <th>출석률</th>
-                    <th>프1</th>
-                    <th>프2</th>
-                    <th>프3</th>
-                    <th>프로젝트 평균</th>
+                    <th>프로젝트1<br>(본평가)</th>
+                    <th>프로젝트2<br>(본평가)</th>
+                    <th>프로젝트3<br>(본평가)</th>
                     <th>종합점수</th>
-                    <th>사후관리</th>
+                    <th>사후관리 지원사항</th>
                   </tr>
                 </thead>
                 <tbody>${growthStudents.map(renderStudentRow).join("")}</tbody>
@@ -466,6 +534,20 @@ function renderGrowthPage() {
             </div>
           </div>
 
+        </section>
+
+        <footer class="growth-links growth-links-report-only">
+          <span>${escGrowth(growthConfig.issuer || "")} · 원본: 평가결과 종합 시트</span>
+        </footer>
+      </div>
+    </section>
+    <section class="report-page growth-page" data-page="growth-admin-detail">
+      <div class="growth-layout growth-admin-detail-layout">
+        <header class="growth-title">
+          <div><h1>종합 결과 운영 기준</h1><p>관리자용 2페이지 · 개인 성적표 발송 전 확인</p></div>
+          <div class="growth-mark"><strong>운영 참고</strong><span>${escGrowth(growthConfig.reportDate || "")}</span></div>
+        </header>
+        <section class="growth-admin-detail-grid">
           <aside class="growth-panel growth-note-panel">
             <div class="section-title">
               <h3>산정 기준</h3>
@@ -487,7 +569,7 @@ function renderGrowthPage() {
         </footer>
       </div>
     </section>
-    ${growthStudents.map((student) => renderIndividualGrowthSection(student, true)).join("")}
+    ${growthStudents.map((student) => renderIndividualGrowthSection(student, true) + renderIndividualScoreDetail(student, true)).join("")}
   `;
 }
 
@@ -683,7 +765,7 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
 function renderIndividualGrowthPage(student) {
   setGrowthChrome(`${student.name} 개인 종합 성적표`, "영상 1개 + 출판 7개 + 프로젝트1·2·3 + 동료평가");
   document.body.classList.add("growth-student-mode");
-  return renderIndividualGrowthSection(student);
+  return renderIndividualGrowthSection(student) + renderIndividualScoreDetail(student);
 }
 
 function renderGrowthApp() {
