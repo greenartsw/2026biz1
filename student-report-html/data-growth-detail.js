@@ -552,7 +552,7 @@ window.GROWTH_SUBJECT_DETAIL = {
     ]
   },
   "문O권": {
-    "displayStatus": "수료",
+    "displayStatus": "수료/이수",
     "preAssessment": 75.0,
     "diagnosticAverage11": 78.7,
     "videoFinal": 60.0,

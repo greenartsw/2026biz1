@@ -1,7 +1,7 @@
 window.GROWTH_CONFIG = {
-  course: "AI활용 출판&광고콘텐츠 제작 전문가 양성과정",
+  course: "기업맞춤-1차 AI활용 출판&광고콘텐츠 제작 전문가 양성과정",
   issuer: "그린컴퓨터아카데미 수원",
-  reportDate: "2026.08.13",
+  reportDate: "2026.08.21",
   reportTitle: "훈련생 성장 종합 결과",
   trainingPeriod: "2026.02.10 ~ 2026.08.12",
   instructors: "황혜진강사 / 박서연강사",
@@ -14,6 +14,7 @@ window.GROWTH_CONFIG = {
     dropoutStudents: 1,
     overallAverage: 85.0,
     videoAverage: 80.4,
+    publishingAverage: 84.3,
     projectAverage: 89.6,
     topStudent: "허O아 93.0점"
   },

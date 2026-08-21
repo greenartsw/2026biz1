@@ -88,21 +88,20 @@ function renderMetric(label, value, meta, tone = "blue") {
 function renderStudentRow(student) {
   const tone = statusTone(student);
   const detail = growthSubjectDetail[student.name] || {};
+  const displayStatus = statusLabel(student);
+  const specialStatus = ["중도탈락", "수료(취업)", "80% 이상수료(취업)", "수료/이수"].includes(displayStatus);
   return `
-    <tr>
+    <tr${specialStatus ? ' class="training-status-row"' : ""}>
       <td class="score-strong">${escGrowth(student.name)}</td>
-      <td class="status-cell ${tone}">${escGrowth(statusLabel(student))}</td>
-      <td>${escGrowth(numberLabel(detail.preAssessment))}</td>
+      <td class="status-cell ${tone}">${escGrowth(displayStatus)}</td>
       <td>${escGrowth(numberLabel(detail.diagnosticAverage11))}</td>
       <td>${escGrowth(numberLabel(detail.videoFinal))}</td>
-      <td>${escGrowth(numberLabel(detail.publishingFinal10))}</td>
-      <td>${escGrowth(numberLabel(detail.selfCheckAverage6))}</td>
-      <td>${escGrowth(numberLabel(student.attendanceRate, "%"))}</td>
+      <td>${escGrowth(numberLabel(student.publishingAverage))}</td>
       <td>${escGrowth(numberLabel(student.project1))}</td>
       <td>${escGrowth(numberLabel(student.project2))}</td>
       <td>${escGrowth(numberLabel(student.project3))}</td>
+      <td>${escGrowth(numberLabel(student.selfCheck))}</td>
       <td class="score-strong">${escGrowth(numberLabel(student.overall))}</td>
-      <td>${escGrowth(detail.aftercareShort || student.aftercare)}</td>
     </tr>
   `;
 }
@@ -586,8 +585,9 @@ function renderGrowthPage() {
         <section class="growth-kpis" aria-label="종합 핵심 지표">
           ${renderMetric("전체 대상", `${metrics.totalStudents}명`, `산정 ${metrics.scoredStudents}명 · 중탈 ${metrics.dropoutStudents}명`, "blue")}
           ${renderMetric("종합 평균", numberLabel(metrics.overallAverage), "영상+출판+프로젝트", "teal")}
-          ${renderMetric("영상 평균", numberLabel(metrics.videoAverage), "개인 이수·수료 판단 포함", "blue")}
-          ${renderMetric("프로젝트 평균", numberLabel(metrics.projectAverage), "확정 숫자 점수 28건", "teal")}
+          ${renderMetric("영상 평균", numberLabel(metrics.videoAverage), "교과목1개", "blue")}
+          ${renderMetric("출판 평균", numberLabel(metrics.publishingAverage), "교과목7개", "blue")}
+          ${renderMetric("프로젝트 평균", numberLabel(metrics.projectAverage), "교과목3개", "teal")}
           ${renderMetric("상위 결과", metrics.topStudent || "-", "종합점수 기준", "amber")}
         </section>
 
@@ -603,17 +603,14 @@ function renderGrowthPage() {
                   <tr>
                     <th>훈련생</th>
                     <th>상태</th>
-                    <th>사전평가</th>
                     <th>사전진단<br>(11과목)</th>
-                    <th>영상교과목<br>(1과목) 본평가</th>
-                    <th>출판교과목<br>(10과목) 본평가</th>
-                    <th>셀프체크자기점검<br>(6과목)</th>
-                    <th>출석률</th>
-                    <th>프로젝트1<br>(본평가)</th>
-                    <th>프로젝트2<br>(본평가)</th>
-                    <th>프로젝트3<br>(본평가)</th>
+                    <th>영상교과목<br>(1과목)</th>
+                    <th>출판교과목<br>(7과목)</th>
+                    <th>프로젝트1</th>
+                    <th>프로젝트2</th>
+                    <th>프로젝트3</th>
+                    <th>셀프체크(영상+출판)<br>자기점검(7과목)</th>
                     <th>종합점수</th>
-                    <th>사후관리 지원사항</th>
                   </tr>
                 </thead>
                 <tbody>${growthStudents.map(renderStudentRow).join("")}</tbody>
@@ -632,22 +629,33 @@ function renderGrowthPage() {
       <div class="growth-layout growth-admin-detail-layout">
         <header class="growth-title">
           <div><h1>종합 결과 운영 기준</h1><p>관리자용 2페이지 · 개인 성적표 발송 전 확인</p></div>
-          <div class="growth-mark"><strong>운영 참고</strong><span>${escGrowth(growthConfig.reportDate || "")}</span></div>
+          <div class="growth-mark"><strong>운영 참고</strong></div>
         </header>
         <section class="growth-admin-detail-grid">
           <aside class="growth-panel growth-note-panel">
-            <div class="section-title">
-              <h3>산정 기준</h3>
-              <span>프로젝트 기업 대시보드와 구분</span>
-            </div>
-            <ul class="criteria-list">
-              ${(growthConfig.criteria || []).map((item) => `<li>${escGrowth(item)}</li>`).join("")}
-            </ul>
-            ${renderPeerPanel()}
-            <div class="section-title">
-              <h3>사후관리 묶음</h3>
-            </div>
-            <ul class="aftercare-list">${topAftercareItems()}</ul>
+            <section class="operation-block">
+              <div class="section-title"><h3>산정기준</h3><span>종합 결과와 기업 프로젝트 평가 구분</span></div>
+              <ul class="criteria-list">
+                ${(growthConfig.criteria || []).map((item) => `<li>${escGrowth(item)}</li>`).join("")}
+              </ul>
+            </section>
+            <section class="operation-block">
+              <div class="section-title"><h3>동료평가체계</h3><span>종합점수와 분리 표시</span></div>
+              <div class="peer-card-grid">${renderPeerCard("unit7")}${renderPeerCard("project1")}</div>
+            </section>
+            <section class="operation-block">
+              <div class="section-title"><h3>사후 관리 방향</h3><span>훈련생별 지원사항 묶음</span></div>
+              <ul class="aftercare-list">${topAftercareItems()}</ul>
+            </section>
+            <section class="operation-block calculation-block">
+              <div class="section-title"><h3>종합평가 계산식 참고</h3><span>평가영역별 적용 범위</span></div>
+              <ul class="calculation-list">
+                <li><strong>채용 적합도</strong><span>본(재)평가 40% + SELF CHECK 20% + 프로젝트 참여도 25% + 출석 15% · 재평가는 원점수 기준</span></li>
+                <li><strong>프로젝트1 평가</strong><span>출판교과목 7개 + 프로젝트1 본(재)평가</span></li>
+                <li><strong>프로젝트2 평가</strong><span>출판교과목 7개 + 프로젝트2 본(재)평가</span></li>
+                <li><strong>프로젝트3 평가</strong><span>출판교과목 7개 + 프로젝트3 본(재)평가</span></li>
+              </ul>
+            </section>
           </aside>
         </section>
 
@@ -832,7 +840,7 @@ function renderIndividualGrowthPage(student) {
 function renderGrowthApp() {
   const student = selectedGrowthStudent();
   if (student) return renderIndividualGrowthPage(student);
-  if (growthAdminModeEnabled()) return renderGrowthAdminPreparing();
+  if (growthAdminModeEnabled()) return renderGrowthPage();
   return renderAccessGate();
 }
 
