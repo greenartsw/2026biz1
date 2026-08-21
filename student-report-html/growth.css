@@ -380,6 +380,39 @@
   background: #fffdf7;
 }
 
+.subject-score-table .source-confirmed {
+  color: var(--ink);
+  background: #fff;
+}
+
+.evidence-details summary {
+  color: var(--blue);
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.evidence-details p {
+  min-width: 520px;
+  max-height: 280px;
+  margin: 8px 0 0;
+  overflow: auto;
+  border: 1px solid #dbe5f2;
+  border-radius: 6px;
+  background: #f7fbff;
+  padding: 10px;
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.55;
+  font-weight: 750;
+  white-space: normal;
+}
+
+.evaluation-details p {
+  min-width: 640px;
+  max-height: 420px;
+  white-space: pre-wrap;
+}
+
 .subject-score-layout > footer {
   color: var(--muted);
   font-size: 11px;
@@ -483,6 +516,44 @@
   font-size: 16px;
   line-height: 1.6;
   font-weight: 800;
+}
+
+.growth-preparing-page {
+  display: grid;
+  place-items: center;
+}
+
+.growth-preparing-card {
+  width: min(680px, 84%);
+  border: 1px solid #d9e5f4;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  padding: 54px 60px;
+  box-shadow: 0 18px 50px rgba(21, 52, 99, 0.12);
+  text-align: center;
+}
+
+.growth-preparing-card h1 {
+  margin: 10px 0 18px;
+  color: var(--navy);
+  font-size: 44px;
+  line-height: 1.18;
+}
+
+.growth-preparing-card p:not(.eyebrow) {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.7;
+  font-weight: 800;
+}
+
+.growth-preparing-card > span {
+  display: block;
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .growth-student-page .growth-layout {
@@ -818,15 +889,15 @@
 }
 
 .student-bars-card {
-  gap: 6px;
+  gap: 4px;
 }
 
 .student-score-bar {
   display: grid;
-  grid-template-columns: 86px minmax(0, 1fr) 42px;
-  gap: 8px;
+  grid-template-columns: 92px minmax(0, 1fr) 36px;
+  gap: 6px;
   align-items: center;
-  min-height: 25px;
+  min-height: 20px;
 }
 
 .student-score-bar span,
@@ -960,9 +1031,105 @@
 
 .student-bottom-panels {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.2fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   min-height: 0;
+}
+
+.student-peer-section {
+  display: block;
+}
+
+.student-peer-panel {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 250px;
+  gap: 18px;
+  align-items: center;
+  height: 100%;
+  padding: 14px 18px;
+}
+
+.student-peer-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.student-peer-heading h3,
+.student-peer-heading span,
+.student-peer-panel p {
+  margin: 0;
+}
+
+.student-peer-heading h3 {
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.student-peer-heading span,
+.student-peer-panel p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  font-weight: 850;
+}
+
+.student-peer-heading > strong {
+  display: grid;
+  justify-items: center;
+  color: var(--blue);
+  font-size: 25px;
+}
+
+.student-peer-heading small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.student-peer-bars {
+  display: grid;
+  gap: 8px;
+}
+
+.student-peer-row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) 42px;
+  gap: 8px;
+  align-items: center;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.student-peer-row i {
+  height: 10px;
+  border-radius: 999px;
+  background: #e7edf6;
+  overflow: hidden;
+}
+
+.student-peer-row b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--blue), var(--teal));
+}
+
+.student-peer-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.result-total-row td {
+  background: #eaf2ff;
+  color: var(--navy);
+  font-weight: 950;
+  text-align: center;
 }
 
 .student-bottom-panels article {
@@ -1023,7 +1190,7 @@
 
 .student-result-sheet {
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   gap: 8px;
   padding: 0 16px 14px;
   overflow: hidden;
@@ -1224,6 +1391,26 @@
 .confirm-box span {
   background: #f7fbff;
   border-right: 1px solid #dfe8f5;
+}
+
+.confirm-signature {
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 8px;
+  padding: 3px 10px;
+}
+
+.confirm-signature b {
+  justify-self: end;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.confirm-signature img {
+  display: block;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
 }
 
 .growth-links {

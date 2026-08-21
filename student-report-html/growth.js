@@ -2,6 +2,7 @@ const growthConfig = window.GROWTH_CONFIG || {};
 const growthStudents = window.GROWTH_STUDENTS || [];
 const growthPeerAssessments = window.GROWTH_PEER_ASSESSMENTS || {};
 const growthSubjectDetail = window.GROWTH_SUBJECT_DETAIL || {};
+const growthPdfEvidence = window.GROWTH_PDF_EVIDENCE || {};
 const growthDeck = document.getElementById("growthDeck");
 const growthParams = new URLSearchParams(location.search);
 
@@ -159,6 +160,37 @@ function renderPeerPanel(student = null) {
   `;
 }
 
+function renderStudentPeerSummary(student) {
+  const record = peerRecord(student, "project1");
+  if (!record) {
+    return `<div class="student-peer-empty">확정된 프로젝트1 동료평가 점수가 없습니다.</div>`;
+  }
+  const items = [
+    ["동료평가", record.peer],
+    ["자기평가", record.self],
+    ["교수자협업", record.instructor]
+  ];
+  const average = avgGrowth(items.map((item) => item[1]));
+  return `
+    <article class="student-peer-panel">
+      <div class="student-peer-heading">
+        <div><h3>동료평가 별도 영역</h3><span>프로젝트1 팀 수행 · 종합점수와 분리 표시</span></div>
+        <strong>${escGrowth(numberLabel(average))}<small>평균</small></strong>
+      </div>
+      <div class="student-peer-bars">
+        ${items.map(([label, value]) => `
+          <div class="student-peer-row">
+            <span>${escGrowth(label)}</span>
+            <i><b style="width:${clampGrowth(value)}%"></b></i>
+            <strong>${escGrowth(numberLabel(value))}</strong>
+          </div>
+        `).join("")}
+      </div>
+      <p>팀 수행 과정의 협업 경험을 동료·자기·교수자 관점으로 비교합니다.</p>
+    </article>
+  `;
+}
+
 function clampGrowth(value, min = 0, max = 100) {
   const number = numericGrowth(value);
   if (number === null) return min;
@@ -190,18 +222,38 @@ function scoreCell(value, missingLabel = "미실시") {
 
 function renderSubjectScoreRows(student) {
   const detail = growthSubjectDetail[student.name] || {};
-  return (detail.subjects || []).map((subject, index) => `
+  const evidenceBySubject = growthPdfEvidence[student.name] || {};
+  return (detail.subjects || []).map((subject, index) => {
+    const evidence = evidenceBySubject[index] || {};
+    const feedback = evidence.teacherFeedback || subject.teacherFeedback;
+    const level = evidence.performanceLevel || subject.performanceLevel;
+    const finalScore = numericGrowth(subject.final);
+    const evaluationDetail = subject.evaluationDetail
+      || (evidence.sourceTitle
+        ? `${finalScore === null ? scoreCell(subject.final, "상태값") : numberLabel(finalScore) + "점"} · 수행준거·상세 배점은 개인 평가수행서 기준`
+        : null);
+    const evaluationFullText = evidence.evaluationFullText || null;
+    return `
     <tr>
       <td>${index + 1}</td>
       <td>${escGrowth(subject.name)}</td>
       <td>${escGrowth(scoreCell(subject.diagnostic, "원자료 없음"))}</td>
       <td>${escGrowth(scoreCell(subject.final, "원자료 없음"))}</td>
       <td>${escGrowth(scoreCell(subject.selfCheck))}</td>
-      <td class="source-missing">${escGrowth(subject.performanceLevel || "확인 필요")}</td>
-      <td class="source-missing">${escGrowth(subject.teacherFeedback || "원자료 없음 · 확인 필요")}</td>
-      <td class="source-missing">${escGrowth(subject.evaluationDetail || "원자료 없음 · 확인 필요")}</td>
+      <td class="${level ? "source-confirmed" : "source-missing"}">${escGrowth(level || "확인 필요")}</td>
+      <td class="${feedback ? "source-confirmed" : "source-missing"}">
+        ${feedback
+          ? `<details class="evidence-details"><summary>교수자 의견 전체보기</summary><p>${escGrowth(feedback)}</p></details>`
+          : "PDF 원문 확인 필요"}
+      </td>
+      <td class="${evaluationFullText ? "source-confirmed" : "source-missing"}">
+        ${evaluationFullText
+          ? `<details class="evidence-details evaluation-details"><summary>평가상세·수행준거 전체보기</summary><p>${escGrowth(evaluationFullText)}</p></details>`
+          : escGrowth(evaluationDetail || "PDF 원문 확인 필요")}
+      </td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function renderIndividualScoreDetail(student, adminEmbed = false) {
@@ -231,7 +283,7 @@ function renderIndividualScoreDetail(student, adminEmbed = false) {
             <thead>
               <tr>
                 <th>No.</th><th>과목명</th><th>사전진단</th><th>본평가</th><th>셀프점검</th>
-                <th>수행준거<br>상·중·하</th><th>교수자 피드백 Full version</th><th>평가상세 점수</th>
+                <th>성취수준<br>1~5수준</th><th>교수자 피드백 Full version</th><th>평가상세·수행준거</th>
               </tr>
             </thead>
             <tbody>${renderSubjectScoreRows(student)}</tbody>
@@ -239,7 +291,7 @@ function renderIndividualScoreDetail(student, adminEmbed = false) {
         </div>
         <div class="subject-score-caution">
           <strong>확인 필요</strong>
-          <span>제공된 엑셀에는 과목별 교수자 서술, 수행준거 상·중·하, 평가상세 점수가 없습니다. 사실과 다른 내용을 만들지 않기 위해 빈 영역을 명시했습니다.</span>
+          <span>개인 평가 PDF 124건의 평가상세·수행준거 전문과 성취수준을 반영했습니다. 별도 서술형 의견이 없는 영상 3건은 원문 확인 대상으로 구분했습니다.</span>
         </div>
         <footer>${escGrowth(growthConfig.issuer || "")} · 확인자 ${escGrowth(growthConfig.confirmer || "")}</footer>
       </div>
@@ -281,13 +333,27 @@ function renderScoreBar(label, value) {
   `;
 }
 
+function renderUnitScoreBars(student) {
+  const labels = [
+    "벡터드로잉",
+    "디지털 이미지",
+    "InDesign 편집",
+    "AI 출판디자인",
+    "Book Design",
+    "ePub·PDF",
+    "광고·브랜딩"
+  ];
+  const values = (student.unitScores && student.unitScores.publishing) || [];
+  return labels.map((label, index) => renderScoreBar(label, values[index])).join("");
+}
+
 function chartSeries(student) {
   return [
-    { label: "영상1", value: student.video },
-    { label: "출판7", value: student.publishingAverage },
-    { label: "프1", value: student.project1 },
-    { label: "프2", value: student.project2 },
-    { label: "프3", value: student.project3 },
+    { label: "영상교과목", lines: ["영상", "교과목"], value: student.video },
+    { label: "출판교과목(1~7단위)", lines: ["출판교과목", "(1~7단위)"], value: student.publishingAverage },
+    { label: "프로젝트1", lines: ["프로젝트1"], value: student.project1 },
+    { label: "프로젝트2", lines: ["프로젝트2"], value: student.project2 },
+    { label: "프로젝트3", lines: ["프로젝트3"], value: student.project3 },
     { label: "종합", value: student.overall }
   ].filter((item) => numericGrowth(item.value) !== null);
 }
@@ -318,7 +384,9 @@ function renderTrendChart(student) {
         <g>
           <circle class="trend-dot" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="4.6"></circle>
           <text class="trend-score" x="${point.x.toFixed(1)}" y="${(point.y - 9).toFixed(1)}">${escGrowth(numberLabel(point.value))}</text>
-          <text class="trend-label" x="${point.x.toFixed(1)}" y="140">${escGrowth(point.label)}</text>
+          <text class="trend-label" x="${point.x.toFixed(1)}" y="136">
+            ${(point.lines || [point.label]).map((line, lineIndex) => `<tspan x="${point.x.toFixed(1)}" dy="${lineIndex ? 10 : 0}">${escGrowth(line)}</tspan>`).join("")}
+          </text>
         </g>
       `).join("")}
     </svg>
@@ -345,11 +413,10 @@ function renderEvaluationFlow(student) {
 
 function renderRadar(student) {
   const items = [
-    { label: "영상", value: student.video },
-    { label: "출판", value: student.publishingAverage },
-    { label: "본평가", value: student.finalAverage },
-    { label: "이론", value: student.selfCheck },
-    { label: "프로젝트", value: student.projectAverage },
+    { label: "영상교과목", value: student.video },
+    { label: "출판교과목", value: student.publishingAverage },
+    { label: "프로젝트1,2,3", value: student.projectAverage },
+    { label: "셀프체크", value: student.selfCheck },
     { label: "출석", value: student.attendanceRate }
   ];
   const center = 82;
@@ -434,13 +501,11 @@ function supportFocus(student) {
 }
 
 function renderResultRows(student) {
-  return [
+  const rows = [
     ["출석", "출석률", numberLabel(student.attendanceRate, "%"), gradeByScore(student.attendanceRate)],
-    ["영상", "능력단위 1", numberLabel(student.video), gradeByScore(student.video)],
-    ["출판", "능력단위 1~7 평균", numberLabel(student.publishingAverage), gradeByScore(student.publishingAverage)],
-    ["본평가", "본(재)평가평균", numberLabel(student.finalAverage), gradeByScore(student.finalAverage)],
-    ["프로젝트", "프로젝트1·2·3 평균", numberLabel(student.projectAverage), gradeByScore(student.projectAverage)],
-    ["종합", "숫자 확정 항목 평균", numberLabel(student.overall), gradeByScore(student.overall)]
+    ["영상교과목", "영상교과목", numberLabel(student.video), gradeByScore(student.video)],
+    ["출판교과목", "출판교과목(1~7단위)", numberLabel(student.publishingAverage), gradeByScore(student.publishingAverage)],
+    ["프로젝트1,2,3", "프로젝트1·2·3 평균", numberLabel(student.projectAverage), gradeByScore(student.projectAverage)]
   ].map((row) => `
     <tr>
       <td>${escGrowth(row[0])}</td>
@@ -449,6 +514,13 @@ function renderResultRows(student) {
       <td>${escGrowth(row[3])}</td>
     </tr>
   `).join("");
+  return rows + `
+    <tr class="result-total-row">
+      <td colspan="2">종합</td>
+      <td>${escGrowth(numberLabel(student.overall))}</td>
+      <td>${escGrowth(gradeByScore(student.overall))}</td>
+    </tr>
+  `;
 }
 
 function topAftercareItems() {
@@ -473,6 +545,21 @@ function renderAccessGate() {
         <p class="eyebrow">성장 종합 결과</p>
         <h1>개인 종합 성적표</h1>
         <p>전체 종합표는 관리자 확인 화면에서만 열람합니다. 개인 성적표는 발송된 개별 링크 기준으로 제공합니다.</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderGrowthAdminPreparing() {
+  setGrowthChrome("훈련생 성장 종합 결과", "관리자 검토 준비 중");
+  document.body.classList.add("growth-admin-page", "growth-admin-preparing");
+  return `
+    <section class="report-page growth-page growth-preparing-page" data-page="growth-admin-preparing">
+      <div class="growth-preparing-card">
+        <p class="eyebrow">ADMIN MODE</p>
+        <h1>성장 종합 결과<br>준비 중입니다.</h1>
+        <p>현재는 개인별 성적표 발송을 우선 진행하고 있습니다.<br>종합 결과는 최종 검토 후 관리자 화면에 공개됩니다.</p>
+        <span>${escGrowth(growthConfig.issuer || "")} · 관리자 검토용</span>
       </div>
     </section>
   `;
@@ -578,8 +665,6 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
     ? "report-page growth-page growth-student-page growth-admin-student-page"
     : "report-page growth-page growth-student-page";
   const participation = projectParticipation(student);
-  const strengths = topStrengths(student);
-  const supports = supportFocus(student);
   const trainingPeriod = growthConfig.trainingPeriod || "2026.02.10 ~ 2026.08.12";
   const instructors = growthConfig.instructors || "황혜진강사 / 박서연강사";
   const confirmer = growthConfig.confirmer || "황혜진 강사";
@@ -655,15 +740,10 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
 
             <article class="student-card student-bars-card">
               <div class="student-card-title">
-                <h3>주요 평가 지표</h3>
-                <span>단위: 점</span>
+                <h3>능력단위별 점수</h3>
+                <span>출판 1~7 · 단위: 점</span>
               </div>
-              ${renderScoreBar("영상", student.video)}
-              ${renderScoreBar("출판 1~7 평균", student.publishingAverage)}
-              ${renderScoreBar("본(재)평가평균", student.finalAverage)}
-              ${renderScoreBar("셀프체크", student.selfCheck)}
-              ${renderScoreBar("프로젝트 평균", student.projectAverage)}
-              ${renderScoreBar("종합점수", student.overall)}
+              ${renderUnitScoreBars(student)}
             </article>
 
             <article class="student-card student-project-card">
@@ -694,20 +774,8 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
             </article>
           </section>
 
-          <section class="student-bottom-panels">
-            <article>
-              <h3>강점</h3>
-              <ul>${strengths.map((item) => `<li>${escGrowth(item)}</li>`).join("")}</ul>
-            </article>
-            <article>
-              <h3>보완점</h3>
-              <ul>${supports.map((item) => `<li>${escGrowth(item)}</li>`).join("")}</ul>
-            </article>
-            <article>
-              <h3>종합 의견</h3>
-              <p>${escGrowth(summaryOpinion(student))}</p>
-              <span>지도교수 : ${escGrowth(instructors)}</span>
-            </article>
+          <section class="student-bottom-panels student-peer-section">
+            ${renderStudentPeerSummary(student)}
           </section>
         </div>
 
@@ -739,22 +807,15 @@ function renderIndividualGrowthSection(student, adminEmbed = false) {
             </table>
           </section>
           <section>
-            <h3>동료평가 별도 영역</h3>
-            <figure class="result-peer-visual">
-              <img src="./assets/growth-peer-banner.png" alt="팀 작업 실무감각 응원 이미지" />
-            </figure>
-            <div class="result-peer-mini">
-              ${renderPeerCard("unit7", student)}
-              ${renderPeerCard("project1", student)}
-            </div>
-          </section>
-          <section>
             <h3>종합 산정 기준</h3>
             ${renderEvaluationFlow(student)}
           </section>
           <section class="confirm-box">
             <span>확인자</span>
-            <strong>지도교수&nbsp;&nbsp;${escGrowth(confirmer)}</strong>
+            <strong class="confirm-signature">
+              <b>지도교수&nbsp;&nbsp;${escGrowth(confirmer)}</b>
+              <img src="./assets/instructor-stamp-hwang.png" alt="황혜진 강사 확인 도장" />
+            </strong>
           </section>
         </aside>
       </div>
@@ -771,7 +832,7 @@ function renderIndividualGrowthPage(student) {
 function renderGrowthApp() {
   const student = selectedGrowthStudent();
   if (student) return renderIndividualGrowthPage(student);
-  if (growthAdminModeEnabled()) return renderGrowthPage();
+  if (growthAdminModeEnabled()) return renderGrowthAdminPreparing();
   return renderAccessGate();
 }
 

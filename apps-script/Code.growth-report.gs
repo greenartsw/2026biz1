@@ -4,6 +4,7 @@ const GROWTH_RELEASE_CONFIG = {
   rosterSpreadsheetId: '1KQtB9bGa6iBzFu-N1843eAB5z9B-j1yk1a_MOEu9Cp8',
   rosterSheetName: '프로젝트3',
   reportBaseUrl: 'https://greenartsw.github.io/2026biz1/student-report-html/growth.html',
+  reportVersion: '20260821-personalonly1',
   tokenRedirectBaseUrl: 'https://greenartsw.github.io/2026biz1/student-report-html/token-redirect.html',
   courseName: '[기업맞춤AI활용 출판&광고콘텐츠 제작 전문가 양성과정]',
   reportName: '개인 종합 성적표'
@@ -12,8 +13,8 @@ const GROWTH_RELEASE_CONFIG = {
 const GROWTH_RELEASE_STUDENTS = [
   { name: '김민정', maskedName: '김O정', status: '' },
   { name: '김예림', maskedName: '김O림', status: '중탈' },
-  { name: '김지수', maskedName: '김O수', status: '8/3취업' },
-  { name: '김혜교', maskedName: '김O교', status: '80%이상수료 / 7/20취업' },
+  { name: '김지수', maskedName: '김O수', status: '수료(취업)' },
+  { name: '김혜교', maskedName: '김O교', status: '80% 이상수료(취업)' },
   { name: '노예진', maskedName: '노O진', status: '' },
   { name: '문일권', maskedName: '문O권', status: '80%이상수료 / 수료·이수' },
   { name: '박가람', maskedName: '박O람', status: '' },
@@ -155,6 +156,7 @@ function studentReportUrlPayload_(token) {
     reportUrl: GROWTH_RELEASE_CONFIG.reportBaseUrl
       + '?student=' + encodeURIComponent(record.maskedName)
       + '&theme=white'
+      + '&v=' + encodeURIComponent(GROWTH_RELEASE_CONFIG.reportVersion || '')
   };
 }
 
