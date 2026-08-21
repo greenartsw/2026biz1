@@ -219,38 +219,38 @@ function scoreCell(value, missingLabel = "미실시") {
   return isGrowthMissing(value) ? missingLabel : numberLabel(value);
 }
 
-function renderSubjectScoreRows(student) {
+function renderSubjectScoreMatrix(student) {
+  const detail = growthSubjectDetail[student.name] || {};
+  const evidenceBySubject = growthPdfEvidence[student.name] || {};
+  const subjects = detail.subjects || [];
+  const rows = [
+    ["사전진단", (subject) => scoreCell(subject.diagnostic, "원자료 없음")],
+    ["본평가", (subject) => scoreCell(subject.final, "원자료 없음")],
+    ["셀프점검", (subject) => scoreCell(subject.selfCheck)],
+    ["성취수준", (subject, index) => {
+      const evidence = evidenceBySubject[index] || {};
+      return evidence.performanceLevel || subject.performanceLevel || "확인 필요";
+    }]
+  ];
+  return `
+    <table class="subject-score-matrix">
+      <thead><tr><th>평가항목</th>${subjects.map((subject) => `<th>${escGrowth(subject.name)}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map(([label, getter]) => `<tr><th>${escGrowth(label)}</th>${subjects.map((subject, index) => `<td>${escGrowth(getter(subject, index))}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table>
+  `;
+}
+
+function renderTeacherFeedbackRows(student) {
   const detail = growthSubjectDetail[student.name] || {};
   const evidenceBySubject = growthPdfEvidence[student.name] || {};
   return (detail.subjects || []).map((subject, index) => {
     const evidence = evidenceBySubject[index] || {};
     const feedback = evidence.teacherFeedback || subject.teacherFeedback;
-    const level = evidence.performanceLevel || subject.performanceLevel;
-    const finalScore = numericGrowth(subject.final);
-    const evaluationDetail = subject.evaluationDetail
-      || (evidence.sourceTitle
-        ? `${finalScore === null ? scoreCell(subject.final, "상태값") : numberLabel(finalScore) + "점"} · 수행준거·상세 배점은 개인 평가수행서 기준`
-        : null);
-    const evaluationFullText = evidence.evaluationFullText || null;
     return `
-    <tr>
-      <td>${index + 1}</td>
-      <td>${escGrowth(subject.name)}</td>
-      <td>${escGrowth(scoreCell(subject.diagnostic, "원자료 없음"))}</td>
-      <td>${escGrowth(scoreCell(subject.final, "원자료 없음"))}</td>
-      <td>${escGrowth(scoreCell(subject.selfCheck))}</td>
-      <td class="${level ? "source-confirmed" : "source-missing"}">${escGrowth(level || "확인 필요")}</td>
-      <td class="${feedback ? "source-confirmed" : "source-missing"}">
-        ${feedback
-          ? `<details class="evidence-details"><summary>교수자 의견 전체보기</summary><p>${escGrowth(feedback)}</p></details>`
-          : "PDF 원문 확인 필요"}
-      </td>
-      <td class="${evaluationFullText ? "source-confirmed" : "source-missing"}">
-        ${evaluationFullText
-          ? `<details class="evidence-details evaluation-details"><summary>평가상세·수행준거 전체보기</summary><p>${escGrowth(evaluationFullText)}</p></details>`
-          : escGrowth(evaluationDetail || "PDF 원문 확인 필요")}
-      </td>
-    </tr>
+      <article class="teacher-feedback-row${feedback ? "" : " feedback-missing"}">
+        <strong><span>${index + 1}</span>${escGrowth(subject.name)}</strong>
+        <p>${escGrowth(feedback || "PDF 원문에 별도 교수자 의견 없음")}</p>
+      </article>
   `;
   }).join("");
 }
@@ -273,24 +273,12 @@ function renderIndividualScoreDetail(student, adminEmbed = false) {
             <strong>${escGrowth(statusLabel(student))}</strong>
           </div>
         </header>
-        <div class="subject-score-note">
-          <strong>원자료 반영 기준</strong>
-          <span>사전진단·본평가·셀프점검은 평가결과 종합 파일의 원점수입니다. 셀프점검 미실시 과목은 점수로 환산하지 않습니다.</span>
+        <div class="subject-score-matrix-wrap">
+          ${renderSubjectScoreMatrix(student)}
         </div>
-        <div class="subject-score-table-wrap">
-          <table class="subject-score-table">
-            <thead>
-              <tr>
-                <th>No.</th><th>과목명</th><th>사전진단</th><th>본평가</th><th>셀프점검</th>
-                <th>성취수준<br>1~5수준</th><th>교수자 피드백 Full version</th><th>평가상세·수행준거</th>
-              </tr>
-            </thead>
-            <tbody>${renderSubjectScoreRows(student)}</tbody>
-          </table>
-        </div>
-        <div class="subject-score-caution">
-          <strong>확인 필요</strong>
-          <span>개인 평가 PDF 124건의 평가상세·수행준거 전문과 성취수준을 반영했습니다. 별도 서술형 의견이 없는 영상 3건은 원문 확인 대상으로 구분했습니다.</span>
+        <div class="teacher-feedback-panel">
+          <h2>교수자 피드백</h2>
+          <div class="teacher-feedback-list">${renderTeacherFeedbackRows(student)}</div>
         </div>
         <footer>${escGrowth(growthConfig.issuer || "")} · 확인자 ${escGrowth(growthConfig.confirmer || "")}</footer>
       </div>
